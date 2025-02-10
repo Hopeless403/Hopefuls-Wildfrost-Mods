@@ -1,0 +1,64 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: ScriptChangeWaveBellCounter
+// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: CC1DDE51-6D11-4F05-AA69-9B67FE9AC8DF
+// Assembly location: C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Wildfrost_Data\Managed\Assembly-CSharp.dll
+
+using NaughtyAttributes;
+using System.Collections;
+using UnityEngine;
+
+[CreateAssetMenu(fileName = "Change Wave Bell Counter", menuName = "Scripts/Change Wave Bell Counter")]
+public class ScriptChangeWaveBellCounter : Script
+{
+  [SerializeField]
+  private bool set;
+  [SerializeField]
+  [HideIf("set")]
+  private bool add = true;
+  [SerializeField]
+  private int value = 1;
+
+  public override IEnumerator Run()
+  {
+    if (this.set)
+      this.Set();
+    else if (this.add)
+    {
+      this.Add();
+      yield break;
+    }
+  }
+
+  private void Add()
+  {
+    foreach (CampaignNode node in Campaign.instance.nodes)
+    {
+      object obj;
+      if (!node.cleared && node.type.isBattle && node.data.TryGetValue("waves", out obj) && obj is SaveCollection<BattleWaveManager.WaveData> waves)
+        this.Add(waves);
+    }
+  }
+
+  private void Set()
+  {
+    foreach (CampaignNode node in Campaign.instance.nodes)
+    {
+      object obj;
+      if (!node.cleared && node.type.isBattle && node.data.TryGetValue("waves", out obj) && obj is SaveCollection<BattleWaveManager.WaveData> waves)
+        this.Set(waves);
+    }
+  }
+
+  private void Add(SaveCollection<BattleWaveManager.WaveData> waves)
+  {
+    for (int index = 0; index < waves.Count; ++index)
+      waves[index].counter += this.value;
+  }
+
+  private void Set(SaveCollection<BattleWaveManager.WaveData> waves)
+  {
+    for (int index = 0; index < waves.Count; ++index)
+      waves[index].counter = this.value;
+  }
+}

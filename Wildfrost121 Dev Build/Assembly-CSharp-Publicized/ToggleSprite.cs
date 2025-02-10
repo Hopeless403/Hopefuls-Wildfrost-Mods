@@ -1,0 +1,21 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: ToggleSprite
+// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 0418E061-3ED1-4467-97F2-4F1CA34BFCD4
+// Assembly location: C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\Managed\Assembly-CSharp-Publicized.dll
+
+using UnityEngine;
+using UnityEngine.UI;
+
+#nullable disable
+public class ToggleSprite : MonoBehaviour
+{
+  [SerializeField]
+  public Image image;
+  [SerializeField]
+  public Sprite onSprite;
+  [SerializeField]
+  public Sprite offSprite;
+
+  public void Set(bool value) => this.image.sprite = value ? this.onSprite : this.offSprite;
+}

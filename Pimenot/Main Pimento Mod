@@ -1,0 +1,95 @@
+﻿using Deadpan.Enums.Engine.Components.Modding;
+using FMODUnity;
+using HarmonyLib;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using TMPro;
+using UnityEngine;
+using UnityEngine.EventSystems;
+
+namespace Pimeno
+{
+    public class PimentoMod : WildfrostMod
+    {
+        public static PimentoMod Mod;
+        public PimentoMod(string modDirectory) : base(modDirectory)
+        {
+            Mod = this;
+        }
+        public override string GUID => "hope.wildfrost.pimento";
+        public override string[] Depends => new string[] { };
+        public override string Title => "Better Pimento?";
+        public override string Description => "";
+        static Sprite s = null;
+        static CardData c = null;
+
+        protected override void Load()
+        {
+            s ??= Get<CardData>("Pimento").mainSprite;
+            c ??= Get<CardData>("Pimento").Edit<CardData, CardDataBuilder>()
+                /*.FreeModify(c => c
+                .mainSprite = Sprite.Create(MakeReadable(s.texture, s.textureRect,
+                    Mathf.CeilToInt(s.rect.width), Mathf.CeilToInt(s.rect.height + 1.8f)),
+                    new Rect(0, 0, Mathf.CeilToInt(s.rect.width), Mathf.CeilToInt(s.rect.height + 1.8f)),
+                    s.pivot,
+                    s.pixelsPerUnit,
+                    0,
+                    SpriteMeshType.FullRect)
+                )*/
+                //.WithTitle("Pimclone")
+                //.Build()
+                ;/*
+            c.name = "Pimclone";
+            c.forceTitle = "Pimcloned";
+            AddressableLoader.groups["CardData"].list.AddItem(c);
+            AddressableLoader.groups["CardData"].lookup.Add(c.name, c);*/
+
+            //AddressableLoader.GetGroup<CardData>("CardData").Where<CardData>((Func<CardData, bool>)(a => a.name.ToLower().Contains("Pim".ToLower()))).Update(Debug.LogWarning); ;
+            base.Load();
+        }
+        public static Texture2D MakeReadable(Texture2D texture, Rect cropRect, int dstWidth, int dstHeight)
+        {
+            // Create a transparent texture with the destination dimensions
+            Texture2D texture2D = new(dstWidth, dstHeight, TextureFormat.RGBA32, mipChain: false);
+            texture2D.SetPixels(Enumerable.Range(0, dstWidth * dstHeight).Select(_ => Color.clear).ToArray());
+
+            // Allocate a temporary RenderTexture with the original image dimensions
+            RenderTexture active = RenderTexture.active;
+            RenderTexture temporary = RenderTexture.GetTemporary(texture.width, texture.height, 32);
+
+            // Copy the original Texture onto the temporary RenderTexture set active
+            Graphics.Blit(texture, temporary);
+            RenderTexture.active = temporary;
+
+            // Copy the cropped part
+            texture2D.ReadPixels(new Rect(cropRect.x, temporary.height - cropRect.y - cropRect.height, cropRect.width, cropRect.height),
+                //0, 0);
+                //(dstWidth - (int)cropRect.width) / 2, 0);
+                (dstWidth - (int)cropRect.width) / 2, (dstHeight - (int)cropRect.height) / 2);
+            texture2D.Apply();
+            RenderTexture.active = active;
+            RenderTexture.ReleaseTemporary(temporary);
+            return texture2D;
+        }
+        protected override void Unload()
+        {
+            Debug.LogWarning(c);
+            Get<CardData>("Pimento").mainSprite = s;
+            base.Unload();
+        }
+    }
+    /*[HarmonyPatch]
+    public class MyPatchClass
+    {
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Sprite), nameof(Sprite.rect), MethodType.Getter)]
+        public static void Sprite_get_rect(ref Rect __result, Sprite __instance)
+        {
+            Debug.LogWarning(__instance);
+            __result.Set(__result.x, __result.y+100, __result.width, __result.height);
+        }
+    }*/
+
+}

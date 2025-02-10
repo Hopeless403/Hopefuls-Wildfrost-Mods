@@ -1,0 +1,16 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: TargetConstraintNeedsTarget
+// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 0418E061-3ED1-4467-97F2-4F1CA34BFCD4
+// Assembly location: C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\Managed\Assembly-CSharp-Publicized.dll
+
+using UnityEngine;
+
+#nullable disable
+[CreateAssetMenu(fileName = "Needs Target", menuName = "Target Constraints/Needs Target")]
+public class TargetConstraintNeedsTarget : TargetConstraint
+{
+  public override bool Check(Entity target) => !target.NeedsTarget ? this.not : !this.not;
+
+  public override bool Check(CardData targetData) => !targetData.needsTarget ? this.not : !this.not;
+}

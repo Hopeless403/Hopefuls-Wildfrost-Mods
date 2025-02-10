@@ -1,0 +1,43 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: DeckpackBlocker
+// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: CC1DDE51-6D11-4F05-AA69-9B67FE9AC8DF
+// Assembly location: C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Wildfrost_Data\Managed\Assembly-CSharp.dll
+
+using UnityEngine;
+using UnityEngine.UI;
+
+public class DeckpackBlocker : MonoBehaviour
+{
+  private static uint open;
+
+  private void OnEnable() => DeckpackBlocker.Block();
+
+  private void OnDisable() => DeckpackBlocker.Unblock();
+
+  public static void Block()
+  {
+    if (DeckpackBlocker.open++ != 0U)
+      return;
+    DeckpackBlocker.SetButtonsInteractable(false);
+    InputSystem.reset = true;
+  }
+
+  public static void Unblock()
+  {
+    if (--DeckpackBlocker.open != 0U)
+      return;
+    DeckpackBlocker.SetButtonsInteractable(true);
+    InputSystem.reset = true;
+  }
+
+  private static void SetButtonsInteractable(bool interactable)
+  {
+    foreach (GameObject gameObject in GameObject.FindGameObjectsWithTag("Deckpack Interaction"))
+    {
+      Selectable component = gameObject.GetComponent<Selectable>();
+      if (component != null)
+        component.interactable = interactable;
+    }
+  }
+}

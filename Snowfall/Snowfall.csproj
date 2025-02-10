@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--Project was exported from assembly: C:\Users\harri\AppData\Local\Temp\Temp1_Snowfall_-_Alpha_2.1.2.zip\Snowfall.dll-->
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{32BCBB6B-449D-43F9-A646-524A67B156A4}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AssemblyName>Snowfall</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <ApplicationVersion>0.0.1.0</ApplicationVersion>
+    <FileAlignment>512</FileAlignment>
+    <RootNamespace>Snowfall2</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>embedded</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>embedded</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="0Harmony" />
+    <Reference Include="Assembly-CSharp" />
+    <Reference Include="Assembly-CSharp-firstpass" />
+    <Reference Include="DeadExtensions" />
+    <Reference Include="DeadRandom" />
+    <Reference Include="DeadSafe" />
+    <Reference Include="FMODUnity" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="Unity.Addressables" />
+    <Reference Include="Unity.Localization" />
+    <Reference Include="UnityEngine.CoreModule" />
+    <Reference Include="UnityEngine.ImageConversionModule" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="System\Runtime\CompilerServices\RefSafetyRulesAttribute.cs" />
+    <Compile Include="SnowfallMod.cs" />
+    <Compile Include="Util\BattleTools.cs" />
+    <Compile Include="Util\SFUtils.cs" />
+    <Compile Include="Util\TextTools.cs" />
+    <Compile Include="Data\CardModifications.cs" />
+    <Compile Include="Data\CustomBellData.cs" />
+    <Compile Include="Data\GeneralAllyData.cs" />
+    <Compile Include="Data\GenModifications.cs" />
+    <Compile Include="Data\Tribes\BeastTribeData.cs" />
+    <Compile Include="Data\Encounters\BomEncounterData.cs" />
+    <Compile Include="Data\Encounters\CrowerEncounterData.cs" />
+    <Compile Include="Data\Encounters\InkEncounterData.cs" />
+    <Compile Include="Data\Encounters\OverburnEncounterData.cs" />
+    <Compile Include="Classes\TargetModes\TargetModeLeader.cs" />
+    <Compile Include="Classes\TargetModes\TargetModePincer.cs" />
+    <Compile Include="Classes\StatusEffects\StatusEffectApplyXBeforeYAppliedTo.cs" />
+    <Compile Include="Classes\StatusEffects\StatusEffectBonusDamageEqualToXOnTarget.cs" />
+    <Compile Include="Classes\StatusEffects\StatusEffectDropNoGold.cs" />
+    <Compile Include="Classes\StatusEffects\StatusEffectInstantApplyXToCustom.cs" />
+    <Compile Include="Classes\StatusEffects\StatusEffectInstantLoseSpiceOrFrost.cs" />
+    <Compile Include="Classes\StatusEffects\StatusEffectInstantMultipleWeighted.cs" />
+    <Compile Include="Classes\StatusEffects\StatusEffectInstantSummonRand.cs" />
+    <Compile Include="Classes\StatusEffects\StatusEffectOnTurnApplyXIfCondition.cs" />
+    <Compile Include="Classes\StatusEffects\StatusEffectSneak.cs" />
+    <Compile Include="Classes\StatusEffects\StatusEffectWash.cs" />
+    <Compile Include="Classes\Scripts\ScriptUpgradeRandomEnemies.cs" />
+    <Compile Include="Classes\ScriptableAmounts\ScriptableCardsInHand.cs" />
+    <Compile Include="Classes\ScriptableAmounts\ScriptableCurrentCounter.cs" />
+    <Compile Include="Classes\ScriptableAmounts\ScriptableCurrentHealth.cs" />
+    <Compile Include="Classes\ScriptableAmounts\ScriptableCurrentStatusBoostable.cs" />
+    <Compile Include="Classes\ScriptableAmounts\ScriptableDeco.cs" />
+    <Compile Include="Classes\CardScripts\CardScriptTransform.cs" />
+    <Compile Include="Classes\BossRewardDatas\BossRewardDataSpecificCharm.cs" />
+    <Compile Include="Builders\BattleDataBuilder.cs" />
+    <Compile Include="Builders\GameModifierDataBuilder.cs" />
+    <Compile Include="Builders\KeywordDataBuilder.cs" />
+    <Compile Include="Builders\TraitDataBuilder.cs" />
+    <Compile Include="AssemblyInfo.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

@@ -1,0 +1,143 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: NexPlugin.Matchmake
+// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: CC1DDE51-6D11-4F05-AA69-9B67FE9AC8DF
+// Assembly location: C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Wildfrost_Data\Managed\Assembly-CSharp.dll
+
+using System;
+
+namespace NexPlugin
+{
+  public static class Matchmake
+  {
+    public const uint INVALID_GATHERINGID = 0;
+    public const uint NUM_MATCHMAKE_SESSION_ATTRIBUTES = 6;
+    public const uint MATCHMAKE_SESSION_NEAREST_NEIGHBOR_ATTRIBUTE_INDEX = 1;
+    public const uint MATCHMAKE_SESSION_BROADEN_RANGE_ATTRIBUTE_INDEX = 1;
+    public const ulong INVALID_PERSISTENT_GATHERING_CODE = 0;
+    public const uint PERSISTENT_GATHERING_CREATION_MAX = 4;
+    public const uint PERSISTENT_GATHERING_PARTICIPATION_MAX = 16;
+    public const ulong PERSISTENT_GATHERING_CHAT_PARTICIPANTS_MAX = 32;
+    public const uint SETATTIBUTE_VECTOR_SIZE_MAX = 100;
+    public const byte MAX_PROGRESS_SCORE = 100;
+    public const uint UPDATE_PROGRESS_SCORE_MINIMUM_INTERVAL_TIME = 30;
+    public const uint MAX_MATCHMAKE_SESSION_USER_PASSWORD_LENGTH = 32;
+    public const uint MATCHMAKE_SESSION_SYSTEM_PASSWORD_LENGTH = 16;
+    public const uint MAX_MATCHMAKE_BROWSE_SIZE = 100;
+    public const uint MAX_PRINCIPALID_SIZE_TO_FIND_MATCHMAKE_SESSION = 300;
+    public const uint MAX_MATCHMAKE_BROWSE_SIZE_BY_PARTICIPANT = 300;
+    public const uint MAX_MATCHMAKE_SESSION_BY_PARTICIPANT = 1000;
+    public const uint MAX_EXTRA_PARTICIPANTS = 4;
+    public const uint MAX_P2P_SIGNATURE_KEY_LEN = 32;
+    public const ulong RESULTRANGE_ANY_OFFSET = 4294967295;
+    public const uint MATCHMAKE_STRING_MAX_LENGTH = 256;
+    public const uint MATCHMAKE_BUFFER_MAX_LENGTH = 512;
+
+    public enum MatchmakeGeoIpResult
+    {
+      MATCHMAKE_GEO_IP_RESULT_INVALID,
+      MATCHMAKE_GEO_IP_RESULT_FOUND,
+      MATCHMAKE_GEO_IP_RESULT_NOT_FOUND,
+      MATCHMAKE_GEO_IP_RESULT_UNUSED,
+    }
+
+    public enum MatchmakeSystemType
+    {
+      MATCHMAKE_SYSTEM_TYPE_INVALID = 0,
+      MATCHMAKE_SYSTEM_TYPE_ANYBODY = 1,
+      MATCHMAKE_SYSTEM_TYPE_PERSISTENT_GATHERING = 5,
+    }
+
+    public enum MatchmakeSelectionMethod
+    {
+      MATCHMAKE_SELECTION_METHOD_RANDOM,
+      MATCHMAKE_SELECTION_METHOD_NEAREST_NEIGHBOR,
+      MATCHMAKE_SELECTION_METHOD_BROADEN_RANGE,
+      MATCHMAKE_SELECTION_METHOD_PROGRESS_SCORE,
+      MATCHMAKE_SELECTION_METHOD_BROADEN_RANGE_WITH_PROGRESS_SCORE,
+      MATCHMAKE_SELECTION_METHOD_SCORE_BASED,
+    }
+
+    [Flags]
+    public enum GatheringFlags
+    {
+      Nothing = 0,
+      MigrateOwner = 16, // 0x00000010
+      NoPersistentParticipation = 64, // 0x00000040
+      AllowNoParticipant = 128, // 0x00000080
+      ChangeOwnerByOtherHost = 512, // 0x00000200
+      NotifyParticipationEventsToAllParticipants = 1024, // 0x00000400
+      NotifyParticipationEventsToAllParticipantsReproducibly = 2048, // 0x00000800
+    }
+
+    [Flags]
+    public enum MatchmakeSessionOption0 : long
+    {
+      MATCHMAKE_SESSION_OPTION0_NONE = 0,
+      MATCHMAKE_SESSION_OPTION0_FORCE_AUTOMATCH_DELAY = 1,
+      MATCHMAKE_SESSION_OPTION0_FORCE_AUTOMATCH_NODELAY = 2,
+    }
+
+    public enum MatchmakeOption
+    {
+      MATCHMAKE_OPTION_NONE,
+      MATCHMAKE_OPTION_RECORD_LAST_GID_FOR_PARTICIPATION_CHECK,
+      MATCHMAKE_OPTION_RESERVED_1,
+    }
+
+    public enum AutoMatchmakeOption
+    {
+      AUTO_MATCHMAKE_OPTION_NONE,
+      AUTO_MATCHMAKE_OPTION_RECORD_LAST_GID_FOR_PARTICIPATION_CHECK,
+      AUTO_MATCHMAKE_OPTION_UNIQUE_GATHERING_BY_CODEWORD,
+    }
+
+    public enum JoinMatchmakeSessionBehavior
+    {
+      JOIN_MATCHMAKE_SESSION_BEHAVIOR_JOIN_MYSELF,
+      JOIN_MATCHMAKE_SESSION_BEHAVIOR_IM_ALREADY_JOINED,
+    }
+
+    [Flags]
+    public enum FindMatchmakeSessionResultOption
+    {
+      FIND_MATCHMAKESESSION_RESULT_OPTION_NONE = 0,
+      FIND_MATCHMAKESESSION_RESULT_OPTION_APPLICATION_BUFFER = 1,
+      FIND_MATCHMAKESESSION_RESULT_OPTION_MATCHMAKE_PARAM = 2,
+    }
+
+    public enum PersistentGatheringType
+    {
+      Open,
+      PasswordLocked,
+      Official,
+    }
+
+    [Flags]
+    public enum MatchmakeSessionModificationFlag
+    {
+      MATCHMAKE_SESSION_MODIFICATION_FLAG_NONE = 0,
+      MATCHMAKE_SESSION_MODIFICATION_FLAG_ATTRIBUTES = 1,
+      MATCHMAKE_SESSION_MODIFICATION_FLAG_OPEN_PARTICIPATION = 2,
+      MATCHMAKE_SESSION_MODIFICATION_FLAG_APPLICATION_BUFFER = 4,
+      MATCHMAKE_SESSION_MODIFICATION_FLAG_PROGRESS_SCORE = 8,
+      MATCHMAKE_SESSION_MODIFICATION_FLAG_OPTION0 = 16, // 0x00000010
+      MATCHMAKE_SESSION_MODIFICATION_FLAG_MATCHMAKE_PARAM = 32, // 0x00000020
+      MATCHMAKE_SESSION_MODIFICATION_FLAG_MATCHMAKE_PARAM_OVERRIDE = 64, // 0x00000040
+      MATCHMAKE_SESSION_MODIFICATION_FLAG_STARTED_TIME = 128, // 0x00000080
+      MATCHMAKE_SESSION_MODIFICATION_FLAG_USER_PASSWORD = 256, // 0x00000100
+      MATCHMAKE_SESSION_MODIFICATION_FLAG_GAME_MODE = 512, // 0x00000200
+      MATCHMAKE_SESSION_MODIFICATION_FLAG_DESCRIPTION = 1024, // 0x00000400
+      MATCHMAKE_SESSION_MODIFICATION_FLAG_MIN_PARTICIPANTS = 2048, // 0x00000800
+      MATCHMAKE_SESSION_MODIFICATION_FLAG_MAX_PARTICIPANTS = 4096, // 0x00001000
+      MATCHMAKE_SESSION_MODIFICATION_FLAG_MATCHMAKE_SYSTEM_TYPE = 8192, // 0x00002000
+      MATCHMAKE_SESSION_MODIFICATION_FLAG_CODEWORD = 16384, // 0x00004000
+    }
+
+    public enum AnybodyParticipationPolicyArgument
+    {
+      WithoutClose,
+      CloseOnOwnerMigration,
+    }
+  }
+}

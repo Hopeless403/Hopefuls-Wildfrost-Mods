@@ -1,0 +1,20 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: ES3Types.ES3UserType_SplatterDataArray
+// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 6CFD501E-4109-4C31-BEBD-DF2E7FCC442F
+// Assembly location: C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\Managed\Assembly-CSharp.dll
+
+#nullable disable
+namespace ES3Types
+{
+  public class ES3UserType_SplatterDataArray : ES3ArrayType
+  {
+    public static ES3Type Instance;
+
+    public ES3UserType_SplatterDataArray()
+      : base(typeof (SplatterPersistenceSystem.SplatterData[]), ES3UserType_SplatterData.Instance)
+    {
+      ES3UserType_SplatterDataArray.Instance = (ES3Type) this;
+    }
+  }
+}

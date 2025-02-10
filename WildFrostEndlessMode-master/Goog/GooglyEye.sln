@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GooglyEye", "GooglyEye\GooglyEye.csproj", "{E48458D6-8484-49F7-9073-9A303A56B189}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmallConsoleMod", "SmallConsoleMod\SmallConsoleMod.csproj", "{43FAC8D4-5190-4C20-B6A0-196CA5401765}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnityExplorer", "UnityExplorer\UnityExplorer.csproj", "{78536B55-8AA1-4588-9242-3BD14508BF75}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E48458D6-8484-49F7-9073-9A303A56B189}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E48458D6-8484-49F7-9073-9A303A56B189}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E48458D6-8484-49F7-9073-9A303A56B189}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E48458D6-8484-49F7-9073-9A303A56B189}.Release|Any CPU.Build.0 = Release|Any CPU
+		{43FAC8D4-5190-4C20-B6A0-196CA5401765}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43FAC8D4-5190-4C20-B6A0-196CA5401765}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43FAC8D4-5190-4C20-B6A0-196CA5401765}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43FAC8D4-5190-4C20-B6A0-196CA5401765}.Release|Any CPU.Build.0 = Release|Any CPU
+		{78536B55-8AA1-4588-9242-3BD14508BF75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{78536B55-8AA1-4588-9242-3BD14508BF75}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{78536B55-8AA1-4588-9242-3BD14508BF75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{78536B55-8AA1-4588-9242-3BD14508BF75}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

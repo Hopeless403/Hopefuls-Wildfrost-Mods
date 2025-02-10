@@ -1,0 +1,56 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: BattleWavePoolData
+// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: CC1DDE51-6D11-4F05-AA69-9B67FE9AC8DF
+// Assembly location: C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Wildfrost_Data\Managed\Assembly-CSharp.dll
+
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+[CreateAssetMenu(fileName = "Battle Wave Pool Data", menuName = "Battle Wave Pool")]
+public class BattleWavePoolData : ScriptableObject
+{
+  [Range(1f, 5f)]
+  public int weight = 1;
+  public int forcePulls;
+  public int maxPulls = 999;
+  public BattleWavePoolData.Wave[] waves;
+  private int pullCount;
+  private List<BattleWavePoolData.Wave> workingList;
+
+  public bool CanPull() => this.pullCount < this.maxPulls;
+
+  public bool MustPull() => this.pullCount < this.forcePulls;
+
+  public BattleWavePoolData.Wave Pull()
+  {
+    if (this.workingList == null)
+      this.workingList = new List<BattleWavePoolData.Wave>();
+    if (this.workingList.Count <= 0)
+      this.workingList.AddRange((IEnumerable<BattleWavePoolData.Wave>) this.waves);
+    int index = this.workingList.Count > 0 ? this.workingList.RandomIndex<BattleWavePoolData.Wave>() : throw new Exception("BattleWavePoolData \"waves\" list is empty!");
+    BattleWavePoolData.Wave working = this.workingList[index];
+    this.workingList.RemoveAt(index);
+    ++this.pullCount;
+    return working;
+  }
+
+  public void Reset()
+  {
+    this.pullCount = 0;
+    this.workingList = (List<BattleWavePoolData.Wave>) null;
+  }
+
+  [Serializable]
+  public struct Wave
+  {
+    public List<CardData> units;
+    public int value;
+    public int positionPriority;
+    public bool fixedOrder;
+    public int maxSize;
+
+    public bool CanAddTo() => this.maxSize <= 0 || this.units.Count < this.maxSize;
+  }
+}

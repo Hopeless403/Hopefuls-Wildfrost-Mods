@@ -1,0 +1,34 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: StatusEffectInstantHeal
+// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: CC1DDE51-6D11-4F05-AA69-9B67FE9AC8DF
+// Assembly location: C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Wildfrost_Data\Managed\Assembly-CSharp.dll
+
+using System.Collections;
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Status Effects/Instant/Heal", fileName = "Heal")]
+public class StatusEffectInstantHeal : StatusEffectInstant
+{
+  [SerializeField]
+  private bool doPing = true;
+
+  protected override IEnumerator Process()
+  {
+    StatusEffectInstantHeal effectInstantHeal = this;
+    if (effectInstantHeal.target.alive)
+    {
+      if (effectInstantHeal.doPing)
+      {
+        CurveAnimator curveAnimator = effectInstantHeal.target.curveAnimator;
+        if (curveAnimator != null)
+        {
+          double num = (double) curveAnimator.Ping();
+        }
+      }
+      yield return (object) new Hit(effectInstantHeal.applier, effectInstantHeal.target, -effectInstantHeal.GetAmount()).Process();
+    }
+    // ISSUE: reference to a compiler-generated method
+    yield return (object) effectInstantHeal.\u003C\u003En__0();
+  }
+}

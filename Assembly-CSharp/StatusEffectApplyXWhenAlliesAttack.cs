@@ -1,0 +1,18 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: StatusEffectApplyXWhenAlliesAttack
+// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: CC1DDE51-6D11-4F05-AA69-9B67FE9AC8DF
+// Assembly location: C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Wildfrost_Data\Managed\Assembly-CSharp.dll
+
+using System.Collections;
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Status Effects/Specific/Apply X When Allies Attack", fileName = "Apply X When Allies Attack")]
+public class StatusEffectApplyXWhenAlliesAttack : StatusEffectApplyX
+{
+  protected override void Init() => this.PreAttack += new StatusEffectData.EffectHitEventHandler(this.HitCheck);
+
+  public override bool RunPreAttackEvent(Hit hit) => this.target.enabled && this.target.alive && (Object) hit.attacker.owner == (Object) this.target.owner && (Object) hit.attacker != (Object) this.target && hit.Offensive;
+
+  private IEnumerator HitCheck(Hit hit) => this.Run(this.GetTargets(hit));
+}

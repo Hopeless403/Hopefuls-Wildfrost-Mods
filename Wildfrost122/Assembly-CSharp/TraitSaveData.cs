@@ -1,0 +1,27 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: TraitSaveData
+// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 6CFD501E-4109-4C31-BEBD-DF2E7FCC442F
+// Assembly location: C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\Managed\Assembly-CSharp.dll
+
+using System;
+
+#nullable disable
+[Serializable]
+public class TraitSaveData : ILoadable<CardData.TraitStacks>
+{
+  public string name;
+  public int count;
+
+  public CardData.TraitStacks Load()
+  {
+    TraitData traitData = AddressableLoader.Get<TraitData>("TraitData", this.name);
+    if (!(bool) (UnityEngine.Object) traitData)
+      return (CardData.TraitStacks) null;
+    return new CardData.TraitStacks()
+    {
+      data = traitData,
+      count = this.count
+    };
+  }
+}

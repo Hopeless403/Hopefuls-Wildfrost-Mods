@@ -1,0 +1,18 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: MonoBehaviourRect
+// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 0418E061-3ED1-4467-97F2-4F1CA34BFCD4
+// Assembly location: C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\Managed\Assembly-CSharp-Publicized.dll
+
+using UnityEngine;
+
+#nullable disable
+public class MonoBehaviourRect : MonoBehaviour
+{
+  public RectTransform _rectTransform;
+
+  public RectTransform rectTransform
+  {
+    get => this._rectTransform ?? (this._rectTransform = (RectTransform) this.transform);
+  }
+}

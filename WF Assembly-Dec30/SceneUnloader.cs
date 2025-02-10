@@ -1,0 +1,266 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: SceneUnloader
+// Assembly: Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 488825E8-55A3-40B4-9121-88EE5E56834E
+// Assembly location: C:\Users\harri\Downloads\Wildfrost\Wildfrost\steamapps\common\Wildfrost\BepInEx\interop\Assembly-CSharp.dll
+
+using Il2CppInterop.Common.Attributes;
+using Il2CppInterop.Runtime;
+using Il2CppInterop.Runtime.InteropTypes;
+using Il2CppSystem.Collections;
+using System.Runtime.InteropServices;
+using UnityEngine;
+
+#nullable disable
+public class SceneUnloader : MonoBehaviour
+{
+  private static readonly System.IntPtr NativeFieldInfoPtr_active;
+  private static readonly System.IntPtr NativeMethodInfoPtr_Unload_Public_Void_0;
+  private static readonly System.IntPtr NativeMethodInfoPtr_UnloadAfter_Public_Void_Single_0;
+  private static readonly System.IntPtr NativeMethodInfoPtr_UnloadAfterRoutine_Private_IEnumerator_Single_0;
+  private static readonly System.IntPtr NativeMethodInfoPtr__ctor_Public_Void_0;
+
+  [CallerCount(0)]
+  [CachedScanResults(RefRangeStart = 0, RefRangeEnd = 0, XrefRangeStart = 53460, XrefRangeEnd = 53471, MetadataInitTokenRva = 0, MetadataInitFlagRva = 0)]
+  public unsafe void Unload()
+  {
+    IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this);
+    System.IntPtr* numPtr = (System.IntPtr*) null;
+    System.IntPtr exc;
+    IL2CPP.il2cpp_runtime_invoke(SceneUnloader.NativeMethodInfoPtr_Unload_Public_Void_0, IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this), (void**) numPtr, ref exc);
+    Il2CppException.RaiseExceptionIfNecessary(exc);
+  }
+
+  [CallerCount(0)]
+  [CachedScanResults(RefRangeStart = 0, RefRangeEnd = 0, XrefRangeStart = 53471, XrefRangeEnd = 53479, MetadataInitTokenRva = 0, MetadataInitFlagRva = 0)]
+  public unsafe void UnloadAfter(float delay)
+  {
+    IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this);
+    System.IntPtr* numPtr = stackalloc System.IntPtr[1]
+    {
+      (System.IntPtr) &delay
+    };
+    System.IntPtr exc;
+    IL2CPP.il2cpp_runtime_invoke(SceneUnloader.NativeMethodInfoPtr_UnloadAfter_Public_Void_Single_0, IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this), (void**) numPtr, ref exc);
+    Il2CppException.RaiseExceptionIfNecessary(exc);
+  }
+
+  [CallerCount(0)]
+  [CachedScanResults(RefRangeStart = 0, RefRangeEnd = 0, XrefRangeStart = 53479, XrefRangeEnd = 53484, MetadataInitTokenRva = 0, MetadataInitFlagRva = 0)]
+  public unsafe IEnumerator UnloadAfterRoutine(float delay)
+  {
+    IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this);
+    System.IntPtr* numPtr = stackalloc System.IntPtr[1]
+    {
+      (System.IntPtr) &delay
+    };
+    System.IntPtr exc;
+    System.IntPtr num = IL2CPP.il2cpp_runtime_invoke(SceneUnloader.NativeMethodInfoPtr_UnloadAfterRoutine_Private_IEnumerator_Single_0, IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this), (void**) numPtr, ref exc);
+    Il2CppException.RaiseExceptionIfNecessary(exc);
+    System.IntPtr pointer = num;
+    return pointer == System.IntPtr.Zero ? (IEnumerator) null : new IEnumerator(pointer);
+  }
+
+  [CallerCount(0)]
+  [CachedScanResults(RefRangeStart = 0, RefRangeEnd = 0, XrefRangeStart = 0, XrefRangeEnd = 0, MetadataInitTokenRva = 0, MetadataInitFlagRva = 0)]
+  public unsafe SceneUnloader()
+    : this(IL2CPP.il2cpp_object_new(Il2CppClassPointerStore<SceneUnloader>.NativeClassPtr))
+  {
+    System.IntPtr* numPtr = (System.IntPtr*) null;
+    System.IntPtr exc;
+    IL2CPP.il2cpp_runtime_invoke(SceneUnloader.NativeMethodInfoPtr__ctor_Public_Void_0, IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this), (void**) numPtr, ref exc);
+    Il2CppException.RaiseExceptionIfNecessary(exc);
+  }
+
+  static SceneUnloader()
+  {
+    Il2CppClassPointerStore<SceneUnloader>.NativeClassPtr = IL2CPP.GetIl2CppClass("Assembly-CSharp.dll", "", nameof (SceneUnloader));
+    IL2CPP.il2cpp_runtime_class_init(Il2CppClassPointerStore<SceneUnloader>.NativeClassPtr);
+    SceneUnloader.NativeFieldInfoPtr_active = IL2CPP.GetIl2CppField(Il2CppClassPointerStore<SceneUnloader>.NativeClassPtr, nameof (active));
+    SceneUnloader.NativeMethodInfoPtr_Unload_Public_Void_0 = IL2CPP.GetIl2CppMethodByToken(Il2CppClassPointerStore<SceneUnloader>.NativeClassPtr, 100667631);
+    SceneUnloader.NativeMethodInfoPtr_UnloadAfter_Public_Void_Single_0 = IL2CPP.GetIl2CppMethodByToken(Il2CppClassPointerStore<SceneUnloader>.NativeClassPtr, 100667632);
+    SceneUnloader.NativeMethodInfoPtr_UnloadAfterRoutine_Private_IEnumerator_Single_0 = IL2CPP.GetIl2CppMethodByToken(Il2CppClassPointerStore<SceneUnloader>.NativeClassPtr, 100667633);
+    SceneUnloader.NativeMethodInfoPtr__ctor_Public_Void_0 = IL2CPP.GetIl2CppMethodByToken(Il2CppClassPointerStore<SceneUnloader>.NativeClassPtr, 100667634);
+  }
+
+  public SceneUnloader(System.IntPtr pointer)
+    : base(pointer)
+  {
+  }
+
+  public unsafe bool active
+  {
+    get
+    {
+      return *(bool*) (IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this) + (int) IL2CPP.il2cpp_field_get_offset(SceneUnloader.NativeFieldInfoPtr_active));
+    }
+    [param: In] set
+    {
+      *(bool*) (IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this) + (int) IL2CPP.il2cpp_field_get_offset(SceneUnloader.NativeFieldInfoPtr_active)) = value;
+    }
+  }
+
+  [ObfuscatedName("SceneUnloader/<UnloadAfterRoutine>d__3")]
+  public sealed class _UnloadAfterRoutine_d__3 : Il2CppSystem.Object
+  {
+    private static readonly System.IntPtr NativeFieldInfoPtr___1__state;
+    private static readonly System.IntPtr NativeFieldInfoPtr___2__current;
+    private static readonly System.IntPtr NativeFieldInfoPtr_delay;
+    private static readonly System.IntPtr NativeFieldInfoPtr___4__this;
+    private static readonly System.IntPtr NativeMethodInfoPtr__ctor_Public_Void_Int32_0;
+    private static readonly System.IntPtr NativeMethodInfoPtr_System_IDisposable_Dispose_Private_Virtual_Final_New_Void_0;
+    private static readonly System.IntPtr NativeMethodInfoPtr_MoveNext_Private_Virtual_Final_New_Boolean_0;
+    private static readonly System.IntPtr NativeMethodInfoPtr_System_Collections_Generic_IEnumerator_System_Object__get_Current_Private_Virtual_Final_New_get_Object_0;
+    private static readonly System.IntPtr NativeMethodInfoPtr_System_Collections_IEnumerator_Reset_Private_Virtual_Final_New_Void_0;
+    private static readonly System.IntPtr NativeMethodInfoPtr_System_Collections_IEnumerator_get_Current_Private_Virtual_Final_New_get_Object_0;
+
+    [CallerCount(53)]
+    [CachedScanResults(RefRangeStart = 1, RefRangeEnd = 54, XrefRangeStart = 1, XrefRangeEnd = 54, MetadataInitTokenRva = 0, MetadataInitFlagRva = 0)]
+    public unsafe _UnloadAfterRoutine_d__3(int _param1)
+      : this(IL2CPP.il2cpp_object_new(Il2CppClassPointerStore<SceneUnloader._UnloadAfterRoutine_d__3>.NativeClassPtr))
+    {
+      System.IntPtr* numPtr = stackalloc System.IntPtr[1]
+      {
+        (System.IntPtr) &_param1
+      };
+      System.IntPtr exc;
+      IL2CPP.il2cpp_runtime_invoke(SceneUnloader._UnloadAfterRoutine_d__3.NativeMethodInfoPtr__ctor_Public_Void_Int32_0, IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this), (void**) numPtr, ref exc);
+      Il2CppException.RaiseExceptionIfNecessary(exc);
+    }
+
+    [CallerCount(12611)]
+    [CachedScanResults(RefRangeStart = 54, RefRangeEnd = 12665, XrefRangeStart = 54, XrefRangeEnd = 12665, MetadataInitTokenRva = 0, MetadataInitFlagRva = 0)]
+    public virtual unsafe void System_IDisposable_Dispose()
+    {
+      IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this);
+      System.IntPtr* numPtr = (System.IntPtr*) null;
+      System.IntPtr exc;
+      IL2CPP.il2cpp_runtime_invoke(SceneUnloader._UnloadAfterRoutine_d__3.NativeMethodInfoPtr_System_IDisposable_Dispose_Private_Virtual_Final_New_Void_0, IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this), (void**) numPtr, ref exc);
+      Il2CppException.RaiseExceptionIfNecessary(exc);
+    }
+
+    [CallerCount(0)]
+    [CachedScanResults(RefRangeStart = 0, RefRangeEnd = 0, XrefRangeStart = 53440, XrefRangeEnd = 53445, MetadataInitTokenRva = 0, MetadataInitFlagRva = 0)]
+    public virtual unsafe bool MoveNext()
+    {
+      IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this);
+      System.IntPtr* numPtr = (System.IntPtr*) null;
+      System.IntPtr exc;
+      System.IntPtr num = IL2CPP.il2cpp_runtime_invoke(SceneUnloader._UnloadAfterRoutine_d__3.NativeMethodInfoPtr_MoveNext_Private_Virtual_Final_New_Boolean_0, IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this), (void**) numPtr, ref exc);
+      Il2CppException.RaiseExceptionIfNecessary(exc);
+      return *(bool*) IL2CPP.il2cpp_object_unbox(num);
+    }
+
+    public virtual unsafe Il2CppSystem.Object System\u002ECollections\u002EGeneric\u002EIEnumerator\u003CSystem\u002EObject\u003E\u002ECurrent
+    {
+      [CallerCount(12), CachedScanResults(RefRangeStart = 12671, RefRangeEnd = 12683, XrefRangeStart = 12671, XrefRangeEnd = 12683, MetadataInitTokenRva = 0, MetadataInitFlagRva = 0)] get
+      {
+        IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this);
+        System.IntPtr* numPtr = (System.IntPtr*) null;
+        System.IntPtr exc;
+        System.IntPtr num = IL2CPP.il2cpp_runtime_invoke(SceneUnloader._UnloadAfterRoutine_d__3.NativeMethodInfoPtr_System_Collections_Generic_IEnumerator_System_Object__get_Current_Private_Virtual_Final_New_get_Object_0, IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this), (void**) numPtr, ref exc);
+        Il2CppException.RaiseExceptionIfNecessary(exc);
+        System.IntPtr pointer = num;
+        return pointer == System.IntPtr.Zero ? (Il2CppSystem.Object) null : new Il2CppSystem.Object(pointer);
+      }
+    }
+
+    [CallerCount(0)]
+    [CachedScanResults(RefRangeStart = 0, RefRangeEnd = 0, XrefRangeStart = 53445, XrefRangeEnd = 53460, MetadataInitTokenRva = 0, MetadataInitFlagRva = 0)]
+    public virtual unsafe void System_Collections_IEnumerator_Reset()
+    {
+      IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this);
+      System.IntPtr* numPtr = (System.IntPtr*) null;
+      System.IntPtr exc;
+      IL2CPP.il2cpp_runtime_invoke(SceneUnloader._UnloadAfterRoutine_d__3.NativeMethodInfoPtr_System_Collections_IEnumerator_Reset_Private_Virtual_Final_New_Void_0, IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this), (void**) numPtr, ref exc);
+      Il2CppException.RaiseExceptionIfNecessary(exc);
+    }
+
+    public virtual unsafe Il2CppSystem.Object System\u002ECollections\u002EIEnumerator\u002ECurrent
+    {
+      [CallerCount(12), CachedScanResults(RefRangeStart = 12671, RefRangeEnd = 12683, XrefRangeStart = 12671, XrefRangeEnd = 12683, MetadataInitTokenRva = 0, MetadataInitFlagRva = 0)] get
+      {
+        IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this);
+        System.IntPtr* numPtr = (System.IntPtr*) null;
+        System.IntPtr exc;
+        System.IntPtr num = IL2CPP.il2cpp_runtime_invoke(SceneUnloader._UnloadAfterRoutine_d__3.NativeMethodInfoPtr_System_Collections_IEnumerator_get_Current_Private_Virtual_Final_New_get_Object_0, IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this), (void**) numPtr, ref exc);
+        Il2CppException.RaiseExceptionIfNecessary(exc);
+        System.IntPtr pointer = num;
+        return pointer == System.IntPtr.Zero ? (Il2CppSystem.Object) null : new Il2CppSystem.Object(pointer);
+      }
+    }
+
+    static _UnloadAfterRoutine_d__3()
+    {
+      Il2CppClassPointerStore<SceneUnloader._UnloadAfterRoutine_d__3>.NativeClassPtr = IL2CPP.GetIl2CppNestedType(Il2CppClassPointerStore<SceneUnloader>.NativeClassPtr, "<UnloadAfterRoutine>d__3");
+      IL2CPP.il2cpp_runtime_class_init(Il2CppClassPointerStore<SceneUnloader._UnloadAfterRoutine_d__3>.NativeClassPtr);
+      SceneUnloader._UnloadAfterRoutine_d__3.NativeFieldInfoPtr___1__state = IL2CPP.GetIl2CppField(Il2CppClassPointerStore<SceneUnloader._UnloadAfterRoutine_d__3>.NativeClassPtr, "<>1__state");
+      SceneUnloader._UnloadAfterRoutine_d__3.NativeFieldInfoPtr___2__current = IL2CPP.GetIl2CppField(Il2CppClassPointerStore<SceneUnloader._UnloadAfterRoutine_d__3>.NativeClassPtr, "<>2__current");
+      SceneUnloader._UnloadAfterRoutine_d__3.NativeFieldInfoPtr_delay = IL2CPP.GetIl2CppField(Il2CppClassPointerStore<SceneUnloader._UnloadAfterRoutine_d__3>.NativeClassPtr, nameof (delay));
+      SceneUnloader._UnloadAfterRoutine_d__3.NativeFieldInfoPtr___4__this = IL2CPP.GetIl2CppField(Il2CppClassPointerStore<SceneUnloader._UnloadAfterRoutine_d__3>.NativeClassPtr, "<>4__this");
+      SceneUnloader._UnloadAfterRoutine_d__3.NativeMethodInfoPtr__ctor_Public_Void_Int32_0 = IL2CPP.GetIl2CppMethodByToken(Il2CppClassPointerStore<SceneUnloader._UnloadAfterRoutine_d__3>.NativeClassPtr, 100667635);
+      SceneUnloader._UnloadAfterRoutine_d__3.NativeMethodInfoPtr_System_IDisposable_Dispose_Private_Virtual_Final_New_Void_0 = IL2CPP.GetIl2CppMethodByToken(Il2CppClassPointerStore<SceneUnloader._UnloadAfterRoutine_d__3>.NativeClassPtr, 100667636);
+      SceneUnloader._UnloadAfterRoutine_d__3.NativeMethodInfoPtr_MoveNext_Private_Virtual_Final_New_Boolean_0 = IL2CPP.GetIl2CppMethodByToken(Il2CppClassPointerStore<SceneUnloader._UnloadAfterRoutine_d__3>.NativeClassPtr, 100667637);
+      SceneUnloader._UnloadAfterRoutine_d__3.NativeMethodInfoPtr_System_Collections_Generic_IEnumerator_System_Object__get_Current_Private_Virtual_Final_New_get_Object_0 = IL2CPP.GetIl2CppMethodByToken(Il2CppClassPointerStore<SceneUnloader._UnloadAfterRoutine_d__3>.NativeClassPtr, 100667638);
+      SceneUnloader._UnloadAfterRoutine_d__3.NativeMethodInfoPtr_System_Collections_IEnumerator_Reset_Private_Virtual_Final_New_Void_0 = IL2CPP.GetIl2CppMethodByToken(Il2CppClassPointerStore<SceneUnloader._UnloadAfterRoutine_d__3>.NativeClassPtr, 100667639);
+      SceneUnloader._UnloadAfterRoutine_d__3.NativeMethodInfoPtr_System_Collections_IEnumerator_get_Current_Private_Virtual_Final_New_get_Object_0 = IL2CPP.GetIl2CppMethodByToken(Il2CppClassPointerStore<SceneUnloader._UnloadAfterRoutine_d__3>.NativeClassPtr, 100667640);
+    }
+
+    public _UnloadAfterRoutine_d__3(System.IntPtr pointer)
+      : base(pointer)
+    {
+    }
+
+    public unsafe int __1__state
+    {
+      get
+      {
+        return *(int*) (IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this) + (int) IL2CPP.il2cpp_field_get_offset(SceneUnloader._UnloadAfterRoutine_d__3.NativeFieldInfoPtr___1__state));
+      }
+      [param: In] set
+      {
+        *(int*) (IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this) + (int) IL2CPP.il2cpp_field_get_offset(SceneUnloader._UnloadAfterRoutine_d__3.NativeFieldInfoPtr___1__state)) = value;
+      }
+    }
+
+    public unsafe Il2CppSystem.Object __2__current
+    {
+      get
+      {
+        System.IntPtr pointer = *(System.IntPtr*) (IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this) + (int) IL2CPP.il2cpp_field_get_offset(SceneUnloader._UnloadAfterRoutine_d__3.NativeFieldInfoPtr___2__current));
+        return pointer == System.IntPtr.Zero ? (Il2CppSystem.Object) null : new Il2CppSystem.Object(pointer);
+      }
+      [param: In] set
+      {
+        System.IntPtr ptrNotNull = IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this);
+        IL2CPP.il2cpp_gc_wbarrier_set_field(ptrNotNull, ptrNotNull + (int) IL2CPP.il2cpp_field_get_offset(SceneUnloader._UnloadAfterRoutine_d__3.NativeFieldInfoPtr___2__current), IL2CPP.Il2CppObjectBaseToPtr((Il2CppObjectBase) value));
+      }
+    }
+
+    public unsafe float delay
+    {
+      get
+      {
+        return *(float*) (IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this) + (int) IL2CPP.il2cpp_field_get_offset(SceneUnloader._UnloadAfterRoutine_d__3.NativeFieldInfoPtr_delay));
+      }
+      [param: In] set
+      {
+        *(float*) (IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this) + (int) IL2CPP.il2cpp_field_get_offset(SceneUnloader._UnloadAfterRoutine_d__3.NativeFieldInfoPtr_delay)) = value;
+      }
+    }
+
+    public unsafe SceneUnloader __4__this
+    {
+      get
+      {
+        System.IntPtr pointer = *(System.IntPtr*) (IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this) + (int) IL2CPP.il2cpp_field_get_offset(SceneUnloader._UnloadAfterRoutine_d__3.NativeFieldInfoPtr___4__this));
+        return pointer == System.IntPtr.Zero ? (SceneUnloader) null : new SceneUnloader(pointer);
+      }
+      [param: In] set
+      {
+        System.IntPtr ptrNotNull = IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase) this);
+        IL2CPP.il2cpp_gc_wbarrier_set_field(ptrNotNull, ptrNotNull + (int) IL2CPP.il2cpp_field_get_offset(SceneUnloader._UnloadAfterRoutine_d__3.NativeFieldInfoPtr___4__this), IL2CPP.Il2CppObjectBaseToPtr((Il2CppObjectBase) value));
+      }
+    }
+  }
+}

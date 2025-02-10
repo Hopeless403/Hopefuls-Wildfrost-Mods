@@ -1,0 +1,210 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--Project was exported from assembly: C:\Program Files (x86)\Steam\steamapps\workshop\content\1811990\3155028085\Pokefrost.dll-->
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{EA0995F0-5CE2-4337-9CF7-86B11420571C}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AssemblyName>Pokefrost</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <ApplicationVersion>1.0.0.0</ApplicationVersion>
+    <FileAlignment>512</FileAlignment>
+    <RootNamespace>Pokefrost</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>embedded</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>embedded</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="0Harmony" />
+    <Reference Include="Assembly-CSharp" />
+    <Reference Include="BattleEditor" />
+    <Reference Include="DeadExtensions" />
+    <Reference Include="DeadRandom" />
+    <Reference Include="DeadSafe" />
+    <Reference Include="FMODUnity" />
+    <Reference Include="Rewired_Core" />
+    <Reference Include="Steamworks" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="Unity.Addressables" />
+    <Reference Include="Unity.Localization" />
+    <Reference Include="Unity.ResourceManager" />
+    <Reference Include="Unity.TextMeshPro" />
+    <Reference Include="UnityEngine.CoreModule" />
+    <Reference Include="UnityEngine.ParticleSystemModule" />
+    <Reference Include="UnityEngine.UI" />
+    <Reference Include="UnityEngine.UIModule" />
+    <Reference Include="VFX_Tests" />
+    <Reference Include="WildfrostHopeMod.Utils" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="StatusEffectFreeTrait.cs" />
+    <Compile Include="Class3.cs" />
+    <Compile Include="Class4.cs" />
+    <Compile Include="FXHelper.cs" />
+    <Compile Include="AddressableExtMethods.cs" />
+    <Compile Include="BattleDataWithRewards.cs" />
+    <Compile Include="BattleGenerationScriptHooh.cs" />
+    <Compile Include="BellClasses.cs" />
+    <Compile Include="1BellClasses.cs" />
+    <Compile Include="2BellClasses.cs" />
+    <Compile Include="3BellClasses.cs" />
+    <Compile Include="4BellClasses.cs" />
+    <Compile Include="5BellClasses.cs" />
+    <Compile Include="6BellClasses.cs" />
+    <Compile Include="7BellClasses.cs" />
+    <Compile Include="8BellClasses.cs" />
+    <Compile Include="9BellClasses.cs" />
+    <Compile Include="BossRewardDataCard.cs" />
+    <Compile Include="ButtonClasses.cs" />
+    <Compile Include="IStatusToken.cs" />
+    <Compile Include="1ButtonClasses.cs" />
+    <Compile Include="2ButtonClasses.cs" />
+    <Compile Include="3ButtonClasses.cs" />
+    <Compile Include="CampaignNodeTypeBetterEvent.cs" />
+    <Compile Include="CampaignNodeTypeSpecialBattle.cs" />
+    <Compile Include="CardScripts.cs" />
+    <Compile Include="EntityCardScript.cs" />
+    <Compile Include="1CardScripts.cs" />
+    <Compile Include="2CardScripts.cs" />
+    <Compile Include="3CardScripts.cs" />
+    <Compile Include="4CardScripts.cs" />
+    <Compile Include="CombineCardInBattleSystem.cs" />
+    <Compile Include="CombineCardSequenceExtension.cs" />
+    <Compile Include="CustomCommands.cs" />
+    <Compile Include="EventBattleManager.cs" />
+    <Compile Include="ScriptReturnNode.cs" />
+    <Compile Include="EventSaveSystem.cs" />
+    <Compile Include="FinalBossSwapperPatches.cs" />
+    <Compile Include="1FinalBossSwapperPatches.cs" />
+    <Compile Include="ModComp.cs" />
+    <Compile Include="QuestSystem.cs" />
+    <Compile Include="SpawnCressliaModifierSystem.cs" />
+    <Compile Include="TicketTimerModifierSystem.cs" />
+    <Compile Include="GatekeeperModifierSystem.cs" />
+    <Compile Include="ScriptableCardImages.cs" />
+    <Compile Include="StatusEffectAdAttackEffects.cs" />
+    <Compile Include="DumbFixes.cs" />
+    <Compile Include="EventRoutineTrade.cs" />
+    <Compile Include="EvolutionPopUp.cs" />
+    <Compile Include="CommandFillEvolves.cs" />
+    <Compile Include="CommandFillEvolveDebug1.cs" />
+    <Compile Include="Extensions.cs" />
+    <Compile Include="EyeDataAdder.cs" />
+    <Compile Include="Furret.cs" />
+    <Compile Include="PickupRoutine.cs" />
+    <Compile Include="ScriptableAmounts.cs" />
+    <Compile Include="1ScriptableAmounts.cs" />
+    <Compile Include="2ScriptableAmounts.cs" />
+    <Compile Include="3ScriptableAmounts.cs" />
+    <Compile Include="4ScriptableAmounts.cs" />
+    <Compile Include="5ScriptableAmounts.cs" />
+    <Compile Include="6ScriptableAmounts.cs" />
+    <Compile Include="StatusEffectAllCardsAreRecycled.cs" />
+    <Compile Include="StatusEffectApplyXOnCardPlayedMaybe.cs" />
+    <Compile Include="StatusEffectApplyXOnHitOtherwiseY.cs" />
+    <Compile Include="StatusEffectApplyXOnRecall.cs" />
+    <Compile Include="StatusEffectApplyXWhenDiscardedFixed.cs" />
+    <Compile Include="StatusEffectApplyXWhenAnyoneTakesDamageEqualToDama.cs" />
+    <Compile Include="StatusEffectApplyXWhenCertainCardPlayed.cs" />
+    <Compile Include="StatusEffectApplyXWhileStatused.cs" />
+    <Compile Include="StatusEffectBurning.cs" />
+    <Compile Include="StatusEffectChangeData.cs" />
+    <Compile Include="StatusEffectGiveDreamCard.cs" />
+    <Compile Include="StatusEffectConvertEffects.cs" />
+    <Compile Include="StatusEffectDuplicateEffect.cs" />
+    <Compile Include="StatusEffectEvolveFromNode.cs" />
+    <Compile Include="StatusEffectEvolveSlowpoke.cs" />
+    <Compile Include="StatusEffectEvolveChingling.cs" />
+    <Compile Include="StatusEffectEvolveKirlia.cs" />
+    <Compile Include="StatusEffectEvolveFromCardPickup.cs" />
+    <Compile Include="StatusEffectEvolveNatu.cs" />
+    <Compile Include="StatusEffectEvolvePlayCards.cs" />
+    <Compile Include="StatusEffectFalseSwipe.cs" />
+    <Compile Include="StatusEffectResist.cs" />
+    <Compile Include="StatusEffectInstantAddDeck.cs" />
+    <Compile Include="StatusEffectInstantFullHeal.cs" />
+    <Compile Include="StatusEffectInstantRemoveCounter.cs" />
+    <Compile Include="StatusEffectInstantReturnToHand.cs" />
+    <Compile Include="StatusEffectJolted.cs" />
+    <Compile Include="StatusEffectMoveCard.cs" />
+    <Compile Include="StatusEffectPickup.cs" />
+    <Compile Include="StatusEffectPlayCardsInHand.cs" />
+    <Compile Include="StatusEffectRetreat.cs" />
+    <Compile Include="StatusEffectRevive.cs" />
+    <Compile Include="StatusEffectRunScript.cs" />
+    <Compile Include="StatusEffectSketch.cs" />
+    <Compile Include="StatusEffectSketchOnDeploy.cs" />
+    <Compile Include="StatusEffectNincadaAndMurkrow.cs" />
+    <Compile Include="1StatusEffectNincadaAndMurkrow.cs" />
+    <Compile Include="StatusEffectInstantApplyXCardInDeck.cs" />
+    <Compile Include="StatusEffectImmuneToDamage.cs" />
+    <Compile Include="StatusEffectSpicune.cs" />
+    <Compile Include="StatusEffectSummonCustom.cs" />
+    <Compile Include="1StatusEffectSummonCustom.cs" />
+    <Compile Include="2StatusEffectSummonCustom.cs" />
+    <Compile Include="3StatusEffectSummonCustom.cs" />
+    <Compile Include="StatusEffectTransfer.cs" />
+    <Compile Include="StatusEffectUnlimitedLumin.cs" />
+    <Compile Include="StatusEffectWeather.cs" />
+    <Compile Include="StatusEffectWhileExistingX.cs" />
+    <Compile Include="StatusEffectWhileRedrawBellChargedX.cs" />
+    <Compile Include="StatusEffectXActsLikeShell.cs" />
+    <Compile Include="Pokefrost.cs" />
+    <Compile Include="PokeLocalizer.cs" />
+    <Compile Include="FixTribeFlags.cs" />
+    <Compile Include="PatchDynamicKeyword.cs" />
+    <Compile Include="PatchDynamicKeyword2.cs" />
+    <Compile Include="PatchInPetFlag.cs" />
+    <Compile Include="PatchInkedTargetModeRemove.cs" />
+    <Compile Include="PatchmentionedCards.cs" />
+    <Compile Include="PatchAddComponent.cs" />
+    <Compile Include="MoreEvents.cs" />
+    <Compile Include="FixClassesGetter.cs" />
+    <Compile Include="PatchNullCheckForRewards.cs" />
+    <Compile Include="PatchNullCheckForFinalBossScripts.cs" />
+    <Compile Include="PatchHarmony.cs" />
+    <Compile Include="StatusEffectEvolveFromHitApplied.cs" />
+    <Compile Include="StatusEffectEvolveFromStatusApplied.cs" />
+    <Compile Include="StatusEffectApplyRandomOnCardPlayed.cs" />
+    <Compile Include="StatusEffectApplyXOnEffect.cs" />
+    <Compile Include="StatusEffectInstantHitRedrawBell.cs" />
+    <Compile Include="StatusEffectIncreaseAttackBasedOnCardsDrawnThisTur.cs" />
+    <Compile Include="StatusEffectBecomeOvershroom.cs" />
+    <Compile Include="StatusEffectOvershroom.cs" />
+    <Compile Include="StatusEffectDummy.cs" />
+    <Compile Include="StatusEffectDreamDummy.cs" />
+    <Compile Include="StatusEffectShiny.cs" />
+    <Compile Include="StatusEffectTriggerWhenDamageType.cs" />
+    <Compile Include="StatusEffectTriggerWhenSummonDeployed.cs" />
+    <Compile Include="StatusEffectEvolve.cs" />
+    <Compile Include="StatusEffectEvolveEevee.cs" />
+    <Compile Include="StatusEffectEvolveFromKill.cs" />
+    <Compile Include="StatusEffectEvolveCubone.cs" />
+    <Compile Include="StatusEffectEvolveExternalFactor.cs" />
+    <Compile Include="TargetModeLowHealth.cs" />
+    <Compile Include="TargetModeTaunt.cs" />
+    <Compile Include="TargetModeStatus.cs" />
+    <Compile Include="Timer.cs" />
+    <Compile Include="UICollector.cs" />
+    <Compile Include="AssemblyInfo.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
