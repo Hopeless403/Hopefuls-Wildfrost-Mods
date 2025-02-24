@@ -21,18 +21,28 @@ using System.Collections;
 using static Building;
 using UnityEngine.UIElements;
 using HarmonyLib.Public.Patching;
+using System.Reflection;
 
 namespace WildfrostHopeMod.VFX
 {
     public partial class VFXMod : WildfrostMod
     {
         public static VFXMod instance;
+        public static GameObject iconTemplate;
         
         public VFXMod(string modDirectory) : base(modDirectory)
         {
-            _ = typeof(Bootstrap);
             instance = this;
             HarmonyInstance.PatchAll(typeof(PatchHarmony));
+
+
+            iconTemplate = Addressables.LoadAssetAsync<GameObject>("Card Icons/SnowIcon.prefab").WaitForCompletion().InstantiateKeepName();
+            GameObject.DontDestroyOnLoad(iconTemplate);
+
+            AllBuiledrs.RemoveAllWhere(t => t.Name == nameof(StatusIconBuilder));
+            AllDataTypes.RemoveAllWhere(t => t.Name == nameof(_StatusIconData));
+            AllBuiledrs.Add(typeof(StatusIconBuilder));
+            AllDataTypes.Add(typeof(_StatusIconData));
         }
 
         public override string GUID => "hope.wildfrost.vfx";
@@ -56,8 +66,34 @@ namespace WildfrostHopeMod.VFX
         public static SpriteAtlas ShrekAtlas;
         public static Sprite[] ShrekSprites;
 
+        public static EventReference testReference = new FMODUnity.EventReference()
+        {
+            Guid = new FMOD.GUID()
+            {
+                Data1 = "hope.wildfrost.vfx".GetHashCode(),
+                Data2 = "other mod guid".GetHashCode(),
+                Data3 = "test".GetHashCode(),
+                Data4 = "sound name".GetHashCode()
+            }
+        };
+
         public override void Load()
         {
+            /*FMODUnity.RuntimeManager.CoreSystem.getMasterSoundGroup(out var soundGroup1);
+            Debug.LogWarning(soundGroup1.hasHandle());
+            //soundGroup1.
+            Debug.LogWarning(soundGroup1.getName(out string name, 100));
+            Debug.LogWarning(name);
+            if (soundGroup1.getNumSounds(out int numSounds) == FMOD.RESULT.OK)
+            {
+                for (int i = 0; i < numSounds; i++)
+                {
+                    soundGroup1.getSound(i, out var sound);
+                    sound.getName(out string n, 100);
+                    Debug.LogError(n);
+                }
+            }*/
+
             HopeSFXSystem.PatchAddCommandCreateSFX.Prefix();
 
             parent = new GameObject(Title).transform;
@@ -66,8 +102,6 @@ namespace WildfrostHopeMod.VFX
             Events.OnEntityKilled += OnEntityKilled;
             Events.OnSceneLoaded += PlayShrekMovieOnCreditsScene;
 
-            Dictionary<string, GameObject> cardIcons = CardManager.cardIcons;
-
             if (!Directory.Exists(ImagesDirectory))
                 Directory.CreateDirectory(ImagesDirectory);
 
@@ -75,10 +109,11 @@ namespace WildfrostHopeMod.VFX
             VFX.RegisterAllAsApplyEffect();
             GIFLoader.OnEffectPlayed += OnEffectPlayed;
 
-            Debug.LogWarning("Is it okay?");
             SFX = new SFXLoader(ImagesDirectory);
             SFX.RegisterAllSoundsToGlobal();
             Events.OnStatusEffectApplied += OnStatusAppliedCheckCooldown;
+            Events.OnEntityHit += OnEntityHitEffectDamageSFXCheckCooldown;
+            Events.OnEntityHit += OnEntityHitWhenHitSFXCheckCooldown;
 
             IconSprite.name = GUID;
             spriteAsset = HopeUtils.CreateSpriteAsset(GUID,
@@ -88,7 +123,7 @@ namespace WildfrostHopeMod.VFX
 
             base.Load();
 
-            UpdateDisplayer();
+            //UpdateDisplayer();
         }
 
         public void OnEntityKilled(Entity entity, DeathType death)
@@ -125,6 +160,56 @@ namespace WildfrostHopeMod.VFX
                 SFXLoader.PlaySound(sound);
                 SfxSystem.SetCooldown(apply.effectData.type);
             }
+            else if (HopeSFXSystem.eventRefs.TryGetValue(apply.effectData.type, out var eventRef))
+            {
+                SfxSystem.OneShot(eventRef);
+                SfxSystem.SetCooldown(apply.effectData.type);
+            }
+        }
+
+        public void OnEntityHitEffectDamageSFXCheckCooldown(Hit hit)
+        {
+            if (!hit.Offensive || !hit.doAnimation || !hit.countsAsHit || !hit.target)
+                return;
+
+            if (SfxSystem.GetHitPower(hit) < 0)
+                return;
+
+            if (hit.damageType.IsNullOrWhitespace())
+                return;
+
+            if (!SfxSystem.CheckCooldown(hit.damageType))
+                return;
+
+
+            Debug.Log("[SFX Tools] EFFECT DAMAGE: " + hit.damageType); 
+            if (HopeSFXSystem.sounds.TryGetValue("damage." + hit.damageType, out FMOD.Sound sound))
+            {
+                SFXLoader.PlaySound(sound);
+                SfxSystem.SetCooldown("damage." + hit.damageType);
+            }
+            if (HopeSFXSystem.sounds.TryGetValue(hit.damageType, out sound))
+            {
+                SFXLoader.PlaySound(sound);
+                SfxSystem.SetCooldown(hit.damageType);
+            }
+            else if (HopeSFXSystem.eventRefs.TryGetValue(hit.damageType, out var eventRef))
+            {
+                SfxSystem.OneShot(eventRef);
+                SfxSystem.SetCooldown(hit.damageType);
+            }
+        }
+        public void OnEntityHitWhenHitSFXCheckCooldown(Hit hit)
+        {
+            if (!hit.Offensive || !hit.doAnimation || !hit.countsAsHit || !hit.BasicHit || VfxHitSystem.GetHitPower(hit) <= 0 || !hit.target)
+                return;
+
+            foreach (var type in HopeSFXSystem.whenHitSounds.Keys)
+                if (hit.target.FindStatus(type))
+                {
+                    SFXLoader.PlaySound(HopeSFXSystem.whenHitSounds[type]);
+                    SfxSystem.SetCooldown("hit." + type);
+                }
         }
 
         public void PlayShrekMovieOnCreditsScene(Scene scene)
@@ -176,6 +261,8 @@ namespace WildfrostHopeMod.VFX
             Events.OnSceneLoaded -= PlayShrekMovieOnCreditsScene;
             GIFLoader.OnEffectPlayed -= OnEffectPlayed;
             Events.OnStatusEffectApplied -= OnStatusAppliedCheckCooldown;
+            Events.OnEntityHit -= OnEntityHitEffectDamageSFXCheckCooldown;
+            Events.OnEntityHit -= OnEntityHitWhenHitSFXCheckCooldown;
         }
     }
 }

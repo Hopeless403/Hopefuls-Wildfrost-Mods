@@ -9,6 +9,7 @@ using UnityEngine.Localization;
 using Deadpan.Enums.Engine.Components.Modding;
 using UnityEngine.AddressableAssets;
 using NaughtyAttributes;
+using System.Collections;
 
 namespace WildfrostHopeMod.CommandsConsole
 {
@@ -135,7 +136,8 @@ namespace WildfrostHopeMod.CommandsConsole
                         if (locStr == null || locStr.IsEmpty)
                             return builder.Append("null").ToString();
 
-                        string tableEntryKey = LocalizationHelper.GetCollection(locStr.TableReference.TableCollectionName, SystemLanguage.English).GetEntry(locStr.TableEntryReference.KeyId).Key;
+                        string tableEntryKey = LocalizationHelper.GetCollection(locStr.TableReference.TableCollectionName, SystemLanguage.English).GetEntry(locStr.TableEntryReference.KeyId)?.Key
+                            ?? locStr.TableEntryReference.Key;
                         builder.Append($"Extensions.GetLocalizedString(\"{locStr.TableReference.TableCollectionName}\", \"{tableEntryKey}\")");
                         //TableReference(775758c0-ba0d-2a84-984c-7ae6ac6e5feb - Card Text)/TableEntryReference(324785676087296 - Apply X);
                     }
@@ -218,6 +220,32 @@ namespace WildfrostHopeMod.CommandsConsole
                         builder.AppendDepth(tabDepth, $"}}");
                     }
 
+                    else if (obj is IDictionary dict)
+                    {
+                        new Dictionary<string, object>
+                        {
+                            { "owo", null }
+                        };
+
+                        if (dict.Count == 0)
+                            return builder.Append($"new {objType.FullDescription().Replace('+', '.')}{{}}").ToString();
+
+                        builder.AppendLine($"new {objType.FullDescription().Replace('+', '.')}");
+                        builder.AppendLineDepth(tabDepth, $"{{");
+                        tabDepth++;
+                        foreach (var y in dict)
+                        {
+                            if (y is System.Collections.DictionaryEntry entry)
+                            {
+                                builder.AppendDepth(tabDepth, $"{{ {Print(entry.Key, tabDepth, ignoreFirstTab:true)}, {Print(entry.Value, tabDepth, ignoreFirstTab: true)} }}").AppendLine(",");
+                            }
+                            else builder.AppendDepth(tabDepth, Print(y, tabDepth, ignoreFirstTab: true)).AppendLine(",");
+                        }
+                            
+                        tabDepth--;
+                        builder.AppendDepth(tabDepth, $"}}");
+                    }
+
                     else if (obj is Sprite sprite)
                     {
                         builder.Append($"{obj} // This requires an external SpriteAtlas which couldn't be found");
@@ -250,6 +278,7 @@ namespace WildfrostHopeMod.CommandsConsole
                     }
                     else if (obj is ValueType valueType && objType.IsValueType && !objType.IsPrimitive && (objType.Namespace == null || !objType.Namespace.StartsWith("System.")))
                     {
+                        //AccessTools.IsStruct(objType);
                         MemberInfo[] members = objType.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
                         HashSet<string> names = members.Select(m => m.Name).ToHashSet();

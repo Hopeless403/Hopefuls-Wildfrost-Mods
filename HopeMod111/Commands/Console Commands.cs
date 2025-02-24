@@ -151,6 +151,7 @@ namespace WildfrostHopeMod.CommandsConsole
                 RenderTexture.active = renderTexture;
                 texture2D.ReadPixels(new Rect(renderTexture.width/2-200, Screen.height/2-(big? 350 : 250), 400, big ? 700 : 500), 0, 0);
                 texture2D.Apply();
+                RenderTexture.ReleaseTemporary(renderTexture);
                 byte[] bytes = texture2D.EncodeToPNG();
                 Directory.CreateDirectory(directory);
                 File.WriteAllBytes(text, bytes);
@@ -247,7 +248,22 @@ namespace WildfrostHopeMod.CommandsConsole
                 };
             }
         }
+        public class CommandToggleBattleFreeAction : Console.CommandToggle
+        {
+            public override string id => "battle freeaction";
+            public override string desc => "affects the next card/redraw";
 
+            public override void TurnOn()
+            {
+                if (Battle.instance == null) this.Fail("Must be in battle to use this command");
+                else Battle.instance.player.freeAction = true;
+            }
+            public override void TurnOff()
+            {
+                if (Battle.instance == null) this.Fail("Must be in battle to use this command");
+                else Battle.instance.player.freeAction = false;
+            }
+        }
 
 
         public class CommandGoTo : Console.Command

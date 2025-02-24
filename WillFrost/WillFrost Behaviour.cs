@@ -10,9 +10,9 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace WildfrostHopeMod.StatusIcons
+namespace WildfrostHopeMod.WillFrost
 {
-    public class StatusIconsModBehaviour : MonoBehaviour
+    public class WillFrostModBehaviour : MonoBehaviour
     {
         internal void Start()
         {

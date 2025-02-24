@@ -10,7 +10,9 @@ namespace WildfrostHopeMod.UE_Texture_Fix
     public class UE_Texture_FixMod(string modDirectory) : WildfrostMod(modDirectory)
     {
         public override string GUID => "hope.wildfrost.ueTextureFix";
-        public override string[] Depends => ["kopie.wildfrost.unityexplorer"];
+        public override string[] Depends => [
+            //"kopie.wildfrost.unityexplorer"
+            ];
         public override string Title => "UE Texture Fix";
         public override string Description => "Just fixes inspecting Texture2D / Sprite / Images with Unity Explorer. Nothing else.";
 

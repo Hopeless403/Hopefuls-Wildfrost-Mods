@@ -16,16 +16,48 @@ using Dir = System.IO.Directory;
 using WildfrostHopeMod.VFX;
 using Deadpan.Enums.Engine.Components.Modding;
 using System.Runtime.InteropServices.ComTypes;
+using static SfxSystem;
+using FMOD.Studio;
 
 namespace WildfrostHopeMod.SFX
 {
+    
+
     public static class HopeSFXSystem
     {
-        public static readonly Dictionary<string, FMOD.Sound> sounds = new();
+        public static EventReference PathToEventReference(string path)
+        {
+            //FMODUnity.RuntimeManager.CreateInstance()
+            FMODUnity.RuntimeManager.CoreSystem.createSoundGroup("test group", out var soundGroup);
+            //soundGroup.
+            FMODUnity.RuntimeManager.CoreSystem.getMasterSoundGroup(out var soundGroup1);
+            Debug.LogWarning(soundGroup1.hasHandle());
+            //soundGroup1.
+            Debug.LogWarning(soundGroup1.getName(out string name, 5));
+            Debug.LogWarning(name);
+
+            EventReference e;
+            EventInstance i;
+            FMOD.Sound s;
+            return VFXMod.testReference;
+        }
+
+        internal class PatchInterpretEventReference
+        {
+
+        }
+
+
+
+
+
+        internal static readonly Dictionary<string, FMOD.Sound> sounds = new();
+        internal static readonly Dictionary<string, FMOD.Sound> whenHitSounds = new();
+        internal static readonly Dictionary<string, FMODUnity.EventReference> eventRefs = new();
 
         //[HarmonyPatch(typeof(Console), nameof(Console.Commands))]
         [HarmonyPatch(typeof(Console), nameof(Console.PopulateHelp))]
-        public class PatchAddCommandCreateSFX
+        internal class PatchAddCommandCreateSFX
         {
             public static void Prefix()
             {
@@ -44,7 +76,7 @@ namespace WildfrostHopeMod.SFX
                 }
             }
         }
-        public class CommandCreateSFX : Console.Command
+        internal class CommandCreateSFX : Console.Command
         {
             public override string id => "create sfx";
             public override string format => "create sfx <name>";
@@ -98,7 +130,7 @@ namespace WildfrostHopeMod.SFX
                 if (source.Any()) predictedArgs = source.ToArray();
             }
         }
-        public class CommandStopSFX : Console.Command
+        internal class CommandStopSFX : Console.Command
         {
             public override string id => "stop sfx";
             public override void Run(string args)
@@ -119,9 +151,10 @@ namespace WildfrostHopeMod.SFX
             Directory = directory; 
             LookThroughSubfolders = lookThroughSubfolders; 
             if (initialize) Initialize();
+            
         }
 
-        static FMOD.System system = FMODUnity.RuntimeManager.CoreSystem;
+        internal static FMOD.System system = FMODUnity.RuntimeManager.CoreSystem;
 
         public static FMOD.ChannelGroup GetChannelGroup(PlayAs playAs = PlayAs.SFX) => 
             GameObject.FindObjectOfType<AudioSettingsSystem>().busLookup[playAs.ToString()].channelGroup;
@@ -134,7 +167,7 @@ namespace WildfrostHopeMod.SFX
         /// <summary>
         /// Leave empty to load all files in .directory except subfolders
         /// </summary>
-        public string[] extensionsToLoad = new string[] { "wav", "mp3", "ogg", "midi", "mid" };
+        public string[] extensionsToLoad = new string[] { "wav", "mp3", "ogg" };
 
         /// <summary>
         /// Automatically filled whenever any LoadSound..() is called
@@ -190,10 +223,17 @@ namespace WildfrostHopeMod.SFX
         //public void RegisterSounds(FMOD.Sound[] sounds) => sounds.Update(this.sounds[])
         public void RegisterSound(string name, FMOD.Sound sound) => sounds[name] = sound;
 
-        public void RegisterSoundToGlobal(string name, FMOD.Sound sound)
+        public static void RegisterSoundToGlobal(string name, FMOD.Sound sound)
         {
             HopeSFXSystem.sounds[name] = sound;
             SfxSystem.cooldownTimers[name] = 0.05f;
+            SfxSystem.cooldowns[name] = new SfxSystem.Cooldown(name, 0.05f);
+        }
+        public static void RegisterSoundToGlobal(string name, FMOD.Sound sound, float cooldown)
+        {
+            HopeSFXSystem.sounds[name] = sound;
+            SfxSystem.cooldownTimers[name] = cooldown;
+            SfxSystem.cooldowns[name] = new SfxSystem.Cooldown(name, cooldown);
         }
         public void RegisterAllSoundsToGlobal() => sounds.Update(s => RegisterSoundToGlobal(s.Key, s.Value));
 
@@ -243,6 +283,10 @@ namespace WildfrostHopeMod.SFX
         {
             if (!File.Exists(path))
                 throw new FileNotFoundException($"[SFX Tools] {path} doesn't exist!");
+
+            if (Path.GetExtension(path) == ".mid")
+                Debug.LogError("[SFX Tools] Warning: Adding MIDIs doesn't work for all systems. If ERR_PLUGIN_RESOURCE is thrown, this is why.");
+
             var result = system.createSound(path, loop ? FMOD.MODE.LOOP_NORMAL : FMOD.MODE._2D, out FMOD.Sound sound);
             if (result != FMOD.RESULT.OK) throw new Exception(result.ToString());
             return sound;

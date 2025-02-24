@@ -13,6 +13,7 @@ public partial class GIFLoader
 
 public static class GIFLoaderExt
 {
+    static VfxStatusSystem vfxSystem;
     /// <summary>
     /// Register this prefab in the global VfxStatusSystem to play on applying a status with defined .type
     /// </summary>
@@ -23,8 +24,8 @@ public static class GIFLoaderExt
     {
         VfxStatusSystem.Profile profile;
 
-        var vfx = GameObject.FindObjectOfType<VfxStatusSystem>();
-        profile = vfx.profiles.FirstOrDefault(p => p.type == type);
+        vfxSystem ??= GameObject.FindObjectOfType<VfxStatusSystem>();
+        profile = vfxSystem.profiles.FirstOrDefault(p => p.type == type);
 
         if (profile != default)
             profile.applyEffectPrefab = applyEffectPrefab;
@@ -35,14 +36,46 @@ public static class GIFLoaderExt
                 type = type,
                 applyEffectPrefab = applyEffectPrefab
             };
-            vfx.profiles = vfx.profiles.With(profile);
-            vfx.profileLookup[type] = profile;
-            Debug.LogWarning($"Registered [{type}] to VfxStatusSystem.profiles");
+            vfxSystem.profiles = vfxSystem.profiles.With(profile);
+            vfxSystem.profileLookup[type] = profile;
+            //Debug.LogWarning($"Registered [{type}] to VfxStatusSystem.profiles");
         }
         return profile;
     }
     public static List<VfxStatusSystem.Profile> RegisterAsApplyEffectMany(this IEnumerable<GameObject> applyEffectPrefabs) =>
         applyEffectPrefabs.Select(p => RegisterAsApplyEffect(p, p.name)).ToList();
+
+
+    static VfxHitSystem hitSystem;
+    /// <summary>
+    /// Register this prefab in the global VfxHitSystem to play on hitting an entity affected by this status type (eg Bom)
+    /// </summary>
+    /// <param name="hitEffectPrefab"></param>
+    /// <param name="type">type of the StatusEffectApply this should play for</param>
+    /// <returns></returns>
+    public static VfxHitSystem.WithStatusProfile RegisterAsHitEffect(this GameObject hitEffectPrefab, string type)
+    {
+        VfxHitSystem.WithStatusProfile profile;
+
+        hitSystem ??= GameObject.FindObjectOfType<VfxHitSystem>();
+        profile = hitSystem.withStatusProfiles.FirstOrDefault(p => p.statusType == type);
+
+        if (profile != default)
+            profile.effectPrefab = hitEffectPrefab;
+        else
+        {
+            profile = new VfxHitSystem.WithStatusProfile()
+            {
+                statusType = type,
+                effectPrefab = hitEffectPrefab
+            };
+            hitSystem.withStatusProfiles = hitSystem.withStatusProfiles.With(profile);
+            //Debug.LogWarning($"Registered [{type}] to VfxStatusSystem.profiles");
+        }
+        return profile;
+    }
+    public static List<VfxHitSystem.WithStatusProfile> RegisterAsHitEffectMany(this IEnumerable<GameObject> hitEffectPrefabs) =>
+        hitEffectPrefabs.Select(p => RegisterAsHitEffect(p, p.name)).ToList();
 
 
     /// <summary>
@@ -58,10 +91,10 @@ public static class GIFLoaderExt
             damageType = damageType,
             damageEffectPrefab = damageEffectPrefab
         };
-        var vfx = GameObject.FindObjectOfType<VfxStatusSystem>();
-        vfx.damageProfiles = vfx.damageProfiles.With(profile);
-        vfx.damageProfileLookup[damageType] = profile;
-        Debug.LogWarning($"Registered [{damageType}] to VfxStatusSystem.damageProfiles");
+        vfxSystem ??= GameObject.FindObjectOfType<VfxStatusSystem>();
+        vfxSystem.damageProfiles = vfxSystem.damageProfiles.With(profile);
+        vfxSystem.damageProfileLookup[damageType] = profile;
+        //Debug.LogWarning($"Registered [{damageType}] to VfxStatusSystem.damageProfiles");
         return profile;
     }
     public static List<VfxStatusSystem.DamageProfile> RegisterAsDamageEffectMany(this IEnumerable<GameObject> damageEffectPrefabs) =>

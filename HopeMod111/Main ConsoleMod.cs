@@ -86,11 +86,6 @@ namespace WildfrostHopeMod.CommandsConsole
         public static bool instantiated = false;
         public override void Load()
         {
-            Debug.LogError("YIPEEE");
-            //Debug.LogWarning(RuntimeManager.Instance.currentPlatform.GetBankFolder());
-            RuntimeManager.LoadBank("Custom_UI");
-            _ = typeof(TextureHelper);
-
             base.Load();
             CoroutineManager.Start(Instantiate());
             Events.OnModLoaded += PatchToggleCloseUE.RetoggleConsoleAfterUELoaded;

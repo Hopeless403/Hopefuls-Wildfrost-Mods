@@ -60,7 +60,7 @@ namespace Goobers
         [HarmonyPatch(typeof(Extensions), nameof(Extensions.ToSprite), typeof(string))]
         static bool PatchPathToSprite(string path, ref Sprite __result)
         {
-            var instance = Bootstrap.Mods.FirstOrDefault(m => m.Title.Contains("Goobers"));
+            var instance = Extensions.GetModFromGuid("okojo.wildfrost.pokemontrainer wildfrost");
             if (instance == default)
                 return true;
 
@@ -69,8 +69,6 @@ namespace Goobers
 
             string filename = Path.GetFileNameWithoutExtension(path);
             __result = Sprites?.GetSprite(filename);
-
-            //Sprite[] sprites = new DirectoryInfo(path).GetFiles("*.png").Select();
 
             return !__result;
         }
@@ -141,6 +139,8 @@ namespace WildFlipper
 
             addedHandSprites = true;
         }
+
+
         public class StatusEffectApplyXWhenAllyAheadIsHit : StatusEffectApplyXWhenAllyIsHit
         {
             public override bool RunPostHitEvent(Hit hit)
@@ -164,15 +164,30 @@ namespace WildFlipper
                 return false;
             }
         }
+        [HarmonyPatch(typeof(Extensions), nameof(Extensions.ToSprite), typeof(string))]
+        public class PatchPathToSprite
+        {
+            static bool Prefix(string path, ref Sprite __result)
+            {
+                var Cards = new SpriteAtlas();
+                var instance = Extensions.GetModFromGuid("okojo.wildfrost.pokemontrainer wildfrost");
+                if (instance == default)
+                    return true;
 
+                if (!new DirectoryInfo(path).FullName.Contains(new DirectoryInfo(instance.ModDirectory).FullName))
+                    return true;
+
+                string filename = Path.GetFileNameWithoutExtension(path);
+                __result = Cards?.GetSprite(filename);
+                if (!__result)
+                    Debug.LogWarning("[Pokemon Trainer] Oh no, we lost " + filename);
+
+                return !__result;
+            }
+        }
         public override void Load()
         {
-            behaviour = new GameObject("WEE", typeof(WildFlipperModBehaviour));
-            Debug.LogError("YIPEEE");
-            //RuntimeManager.LoadBank("Custom_UI");
-            RuntimeManager.LoadBank("SnowScene");
-            Debug.LogWarning(RuntimeManager.HasBankLoaded("Custom_UI"));
-
+/*
             FMODUnity.RuntimeManager.StudioSystem.getBankList(out FMOD.Studio.Bank[] banks);
 
             foreach (var bank in banks)
@@ -183,31 +198,13 @@ namespace WildFlipper
                     e.getID(out FMOD.GUID guid);
                     e.getLength(out int length);
                     e.getPath(out string path);
-                    Debug.Log((path, length, guid));
+                    //Debug.Log((path, length, guid));
                 }
             }
             //RuntimeManager.PlayOneShot()
 
-            HarmonyInstance.PatchAll(typeof(AddressablesHandler));
+            HarmonyInstance.PatchAll(typeof(AddressablesHandler));*/
 
-
-            /*Sprite[] sprites = new Sprite[Goobers.AddressablesHandler.Sprites.spriteCount];
-            Goobers.AddressablesHandler.Sprites.GetSprites(sprites);
-            int i = 0;
-            foreach (var sprite in sprites)
-            {
-                sprite.name = sprite.name.Replace("(Clone)", "");
-                //Debug.Log(sprite.name);
-                if (!sprite.name.EndsWith(" BG")) continue;
-                Debug.Log(sprite.name);
-                //Debug.LogWarning(Goobers.AddressablesHandler.Sprites.GetSprite(sprite.name));
-                assets.Add(
-                    new CardDataBuilder(this)
-                    .CreateUnit(i++.ToString(), sprite.name.Replace(" BG", ""))
-                    .SetSprites(sprite.name.Replace(" BG", ""), sprite.name)
-                    );
-                //Debug.LogWarning((assets.LastOrDefault() as CardDataBuilder)?._data.mainSprite);
-            }*/
 
             InitAssets();
 
@@ -229,7 +226,7 @@ namespace WildFlipper
             {
                 if (card is StatusEffectApplyX apply && apply.canRetaliate)
                 {
-                    Debug.LogWarning(card);
+                    //Debug.LogWarning(card);
                     //Debug.Log(card.textKey);
                 }
                 if (!card.isKeyword) continue;
@@ -459,6 +456,31 @@ namespace WildFlipper
             ,
 
             new StatusEffectDataBuilder(instance)
+            .Create<StatusEffectApplyXWhenCardMoves>("Riptide")
+            .WithText("When an enemy moves, deal <{a}> damage to them")
+            .SubscribeToAfterAllBuildEvent(d =>
+            {
+                var data = (StatusEffectApplyXWhenCardMoves)d;
+                data.dealDamage = true;
+                data.doesDamage = true;
+                data.applyToFlags = StatusEffectApplyX.ApplyToFlags.Target;
+            })
+            ,
+
+            new StatusEffectDataBuilder(instance)
+            .Create<StatusEffectApplyXWhenCardMoves>("Riptide")
+            .WithText("When an enemy moves, deal <{a}> damage to them")
+            .SubscribeToAfterAllBuildEvent(delegate (StatusEffectApplyXWhenCardMoves d)
+            {
+                var data = (StatusEffectApplyXWhenCardMoves)d;
+                data.dealDamage = true;
+                data.doesDamage = true;
+                data.applyToFlags = StatusEffectApplyX.ApplyToFlags.Target;
+            })
+            ,
+
+            
+            new StatusEffectDataBuilder(instance)
             .Create<StatusEffectWhileActiveX>("While Active Increase Effects To Allies")
             .WithText("While active, boost allies' effects by {a}")
             .SubscribeToAfterAllBuildEvent(d =>
@@ -563,6 +585,32 @@ namespace WildFlipper
                 ("Snow", Right)
                 )
             ,
+            new CardDataBuilder(instance)
+        .CreateUnit(name:"IceForge", englishTitle:"Ice Forge", idleAnim:"FloatAnimationProfile")
+        .WithCardType("Clunker")
+        .WithTitle("冰熔炉", SystemLanguage.ChineseSimplified)
+        .WithTitle("冰熔爐", SystemLanguage.ChineseTraditional)
+        .WithTitle("얼음 용광로", SystemLanguage.Korean)
+        .WithTitle("アイスフォージ", SystemLanguage.Japanese)
+        .WithText("While active, add <+{s0}><keyword=attack> to all allies and <-{s1}><keyword=attack> to all enemies", SystemLanguage.English)
+        .WithText("在场时，所有友军<+{s0}><keyword=attack>，所有敌人<-{s1}><keyword=attack>", SystemLanguage.ChineseSimplified)
+        .WithText("在場時，所有隊友<+{s0}><keyword=attack>，所有敵人<-{s1}><keyword=attack>", SystemLanguage.ChineseTraditional)
+        .WithText("전장에 있는 동안, 모든 아군의 <keyword=attack><+{s0}>, 모든 적의 <keyword=attack><-{s1}>", SystemLanguage.Korean)
+        .WithText("場にある間、すべての味方に<+{s0}><keyword=attack>を、すべての敵に<-{s1}><keyword=attack>を追加する", SystemLanguage.Japanese)
+        .SetStats(null, null, 0)
+        .SetSprites("IceForge_mainSprite.png", "IceForge_BG.png")
+        .WithValue(190)         // Base gold as an enemy: 4-6
+        .SubscribeToAfterAllBuildEvent(data =>
+        {
+                data.startWithEffects = new CardData.StatusEffectStacks[]
+                {
+                        new CardData.StatusEffectStacks(instance.Get<StatusEffectData>("While Active Increase Attack To Allies (No Desc)"), 2),
+                        new CardData.StatusEffectStacks(instance.Get<StatusEffectData>("While Active Reduce Attack To Enemies (No Ping, No Desc)"), 2),
+                        new CardData.StatusEffectStacks(instance.Get<StatusEffectData>("Scrap"), 2),
+                };
+                data.titleFallback = "Ice Forge";
+        }),
+
             new StatusEffectDataBuilder(instance)
             .Create<StatusEffectInstantPhase>("Instant Next Phase Lump", data =>
             {
@@ -829,3 +877,5 @@ namespace WildFlipper
         public class UnreleasedAttribute : Attribute { }
     }
 }
+
+

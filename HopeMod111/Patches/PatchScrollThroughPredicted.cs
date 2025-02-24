@@ -33,13 +33,13 @@ namespace WildfrostHopeMod.CommandsConsole
                 else currentHoldTime = 0;
 
                 if (currentHoldTime >= holdTime) tick++;
-                if (Input.GetKeyDown(KeyCode.UpArrow) || (tick == 3 && Input.GetKey(KeyCode.UpArrow)))
+                if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetAxis("Mouse ScrollWheel") > 0f || (tick == 3 && Input.GetKey(KeyCode.UpArrow)))
                     for (int i = 0; i < args.Length; i++)
                     {
                         tick = 0;
                         scrolledArgs[(i + 1) % args.Length] = args[i];
                     }
-                else if (Input.GetKeyDown(KeyCode.DownArrow) || (tick == 3 && Input.GetKey(KeyCode.DownArrow)))
+                else if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetAxis("Mouse ScrollWheel") < 0f || (tick == 3 && Input.GetKey(KeyCode.DownArrow)))
                     for (int i = 0; i < args.Length; i++)
                     {
                         tick = 0;

@@ -28,7 +28,7 @@ public class PatchSteam
         {
             Debug.LogError($"Steam failed to initialize! ({ex})");
             Debug.LogWarning("[Harmony Suppressor] Continuing without Steam");
-            //Fallback();
+            Fallback();
             return false;
         }
         SteamClient.Shutdown();

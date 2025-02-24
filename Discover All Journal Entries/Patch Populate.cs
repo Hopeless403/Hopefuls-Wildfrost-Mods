@@ -71,17 +71,46 @@ namespace WildfrostHopeMod
         {
             foreach (ClassData classData in References.Classes)
             {
-                if (classData == null) continue;
+                if (classData == null)
+                {
+                    Debug.LogWarning($"[{instance.Title}] Encountered null ClassData in References.Classes");
+                    continue;
+                };
+                if (classData.startingInventory == null)
+                    Debug.LogWarning($"[{instance.Title}] Encountered null startingInventory in tribe [{classData}]");
+                else
+                {
+                    if (classData.startingInventory.deck == null)
+                        Debug.LogWarning($"[{instance.Title}] Encountered null starting deck in tribe [{classData}]");
+                    if (classData.startingInventory.reserve == null)
+                        Debug.LogWarning($"[{instance.Title}] Encountered null starting reserve in tribe [{classData}]");
+                }
+
                 int i = 0;
                 foreach (CardData cardData in classData.leaders) StoreAsPlayerCard(cardData);
-                foreach (CardData cardData in classData.startingInventory.deck) StoreAsPlayerCard(cardData);
-                foreach (CardData cardData in classData.startingInventory.reserve) StoreAsPlayerCard(cardData);
+                foreach (CardData cardData in classData.startingInventory?.deck) StoreAsPlayerCard(cardData);
+                foreach (CardData cardData in classData.startingInventory?.reserve) StoreAsPlayerCard(cardData);
                 foreach (RewardPool rewardPool in classData.rewardPools)
                 {
+                    if (rewardPool == null)
+                    {
+                        Debug.LogWarning($"[{instance.Title}] Encountered null RewardPool in [{classData}]");
+                        continue;
+                    };
                     if (usedPools.Add(rewardPool.name))
                     {
+                        if (rewardPool.list == null)
+                        {
+                            Debug.LogWarning($"[{instance.Title}] Encountered null RewardPool.list in [{classData}] pool [{rewardPool}]");
+                            continue;
+                        }
                         foreach (DataFile dataFile in rewardPool.list)
                         {
+                            if (dataFile == null)
+                            {
+                                Debug.LogWarning($"[{instance.Title}] Encountered null [{dataFile.GetType()}] in [{classData}] pool [{rewardPool}]");
+                                continue;
+                            }
                             if (dataFile is CardData cardData)
                                 StoreAsPlayerCard(cardData);
                         }

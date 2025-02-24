@@ -24,6 +24,12 @@ public class HarmonySuppressorPlugin : BaseUnityPlugin
     [HarmonyPatch(typeof(ModHolder), nameof(ModHolder.UpdateInfo))]
     public static void Postfix(ModHolder __instance)
     {
+        if (__instance.Mod.GetType().Assembly.Location.IsNullOrEmpty())
+        {
+            Debug.LogError($"ASSEMBLY LOCATION OF [{__instance.Mod.Title}] IS BROKEN");
+            return;
+        }
+
         __instance.Title.text += "<size=0.2><voffset=0.03> "
             + Directory.GetLastWriteTime(__instance.Mod.GetType().Assembly.Location);
         __instance.Title.overflowMode = TextOverflowModes.Overflow;
@@ -90,7 +96,7 @@ public class HarmonySuppressorPlugin : BaseUnityPlugin
         //typeof(Console).Assembly.GetMetadataFileOrNull();
         //ICSharpCode.Decompiler
 
-        _ = typeof(PortablePdbWriter)
+        /*_ = typeof(PortablePdbWriter)
         ?? typeof(Mono.Cecil.Cil.PortablePdbWriter);
         _ = typeof(MetaprogressionSystem);
         
@@ -144,7 +150,7 @@ public class HarmonySuppressorPlugin : BaseUnityPlugin
                                 lines[i] = '\t' + lines[i];
                         }
                         // This is at the ending brace
-                        //lines[i] = lineNum + "r" + lines[i]/*;//*/.Substring((int)Math.Floor((lineNum.ToString().Length + 1f) / 4));
+                        //lines[i] = lineNum + "r" + lines[i]/*;//.Substring((int)Math.Floor((lineNum.ToString().Length + 1f) / 4));
                         string tag2 = lines[i+1].TrimStart('\t');
                         //Debug.LogError($"[{lineNum}] {i + 6}");
                         if (tag2 == "}" ||
@@ -182,7 +188,7 @@ public class HarmonySuppressorPlugin : BaseUnityPlugin
                 path: path,
                 contents: contents
                 );
-        }
+        }*/
         
 
         //var tree = decompiler.DecompileWholeModuleAsString();
@@ -359,6 +365,15 @@ class PatchBuilding : MonoBehaviour
         Debug.LogWarning((prefab, __instance.gameObject, prefab == __instance.gameObject));
         Debug.LogWarning((__instance.onSelect.GetPersistentTarget(0), __instance.gameObject, __instance.onSelect.GetPersistentTarget(0) == __instance.gameObject));
         Debug.LogWarning((prefab, __instance.onSelect.GetPersistentTarget(0), prefab == __instance.onSelect.GetPersistentTarget(0)));
+    }
+}
+
+[HarmonyPatch(typeof(MetaprogressionSystem), nameof(MetaprogressionSystem.GetLockedClasses))]
+class PatchClasses : MonoBehaviour
+{
+    static List<ClassData> Postfix(List<ClassData> result)
+    {
+        return [];
     }
 }
 

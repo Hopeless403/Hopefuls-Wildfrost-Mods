@@ -567,6 +567,7 @@
     <Compile Include="Patches\ExtraPopups.cs" />
     <Compile Include="Patches\IgnoreSilence.cs" />
     <Compile Include="Patches\PopUpStats.cs" />
+    <Compile Include="PatchRewards.cs" />
     <Compile Include="StatusEffectApplyXWhenCardMoves.cs" />
     <Compile Include="StatusEffectRecycleX.cs" />
     <Compile Include="StatusEffectWhenCharmedRunScript.cs" />

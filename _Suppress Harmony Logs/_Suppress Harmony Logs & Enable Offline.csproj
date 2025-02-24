@@ -151,6 +151,16 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="Unity.Addressables">
+      <HintPath>..\..\Wildfrost_Data\Managed\Unity.Addressables.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Localization, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Wildfrost_Data\Managed\Unity.Localization.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.ResourceManager">
+      <HintPath>..\..\Wildfrost_Data\Managed\Unity.ResourceManager.dll</HintPath>
+    </Reference>
     <Reference Include="Unity.TextMeshPro">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\Managed\Unity.TextMeshPro.dll</HintPath>
       <Private>False</Private>

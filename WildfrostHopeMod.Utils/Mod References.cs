@@ -14,6 +14,11 @@ using UnityEngine.Localization.Settings;
 using UnityEngine.Localization.Tables;
 using UnityEngine.Localization;
 using UnityEngine.Events;
+using UnityEngine.TextCore.Text;
+using System.Collections;
+using static Building;
+using System.Text.RegularExpressions;
+using UnityEngine.AddressableAssets;
 
 namespace WildfrostHopeMod.Utils
 {
@@ -217,14 +222,22 @@ namespace WildfrostHopeMod.Utils
             return collection.GetString("hope." + text);
         }
 
+        public static Dictionary<string, Sprite> pathToSpriteMemo = [];
         public static Sprite ToSpriteFull(this string path)
         {
+            Sprite sprite = null;
+            /*if (pathToSpriteMemo.TryGetValue(path, out var sprite))
+                return sprite;*/
+
             var t = new Texture2D(0, 0, TextureFormat.RGBA32, false)
             {
                 name = Path.GetFileNameWithoutExtension(path)
             };
             t.LoadImage(File.ReadAllBytes(path));
-            return t.ToSpriteFull();
+            sprite 
+                //= pathToSpriteMemo[path] 
+                = t.ToSpriteFull();
+            return sprite;
         }
 
         public static string Repeat(this string str, int count, string delimiter = "") =>
@@ -363,15 +376,16 @@ namespace WildfrostHopeMod.Utils
 
     public static partial class HopeUtils
     {
-        /// <summary>
-        /// Remember to override your mod's SpriteAsset, AND use .RegisterSpriteAsset()
-        /// </summary>
-        /// <param name="Mod"></param>
-        /// <param name="directoryWithPNGs"></param>
-        /// <param name="textures"></param>
-        /// <param name="sprites"></param>
-        /// <returns></returns>
-        public static TMP_SpriteAsset CreateSpriteAsset(string name, string directoryWithPNGs = null, Texture2D[] textures = null, Sprite[] sprites = null)
+        
+
+    /// <summary>
+    /// Compile image files, textures, and sprites into one list of converted texture2Ds
+    /// </summary>
+    /// <param name="directoryWithPNGs"></param>
+    /// <param name="textures">Unreadable textures will be remade. This is expensive!</param>
+    /// <param name="sprites"></param>
+    /// <returns></returns>
+    public static List<Texture2D> ConvertToTexture2D(string directoryWithPNGs = null, Texture2D[] textures = null, Sprite[] sprites = null)
         {
             List<Texture2D> allTextures = [];
 
@@ -386,7 +400,7 @@ namespace WildfrostHopeMod.Utils
             foreach (var tex in texturesFromPNGs)
                 if (tex) allTextures.Add(tex);
 
-            IEnumerable<Texture2D> texturesFromSprites = sprites == null || sprites.Length == 0 
+            IEnumerable<Texture2D> texturesFromSprites = sprites == null || sprites.Length == 0
                 ? [] : sprites?.Where(s => s != null)
                     .Select(s =>
                     {
@@ -407,11 +421,27 @@ namespace WildfrostHopeMod.Utils
             foreach (var tex in texturesProvided)
                 if (tex) allTextures.Add(tex);
 
+            return allTextures;
+        }
+
+
+
+        /// <summary>
+        /// Remember to override your mod's SpriteAsset, AND use .RegisterSpriteAsset()
+        /// </summary>
+        /// <param name="directoryWithPNGs"></param>
+        /// <param name="textures">Unreadable textures will be remade. This is expensive!</param>
+        /// <param name="sprites"></param>
+        /// <returns></returns>
+        public static TMP_SpriteAsset CreateSpriteAsset(string name, float scale, string directoryWithPNGs = null, Texture2D[] textures = null, Sprite[] sprites = null)
+        {
+            List<Texture2D> allTextures = ConvertToTexture2D(directoryWithPNGs, textures, sprites);
+
             //Debug.LogError(name + ".Sheet has " + allTextures.Count);
 
             // Initialise the texture atlas
             Texture2D atlas = new(1 << 12, 1 << 12)
-            { name = name + ".Sheet" };
+                            { name = name + ".Sheet" };
             Rect[] rects = atlas.PackTextures(allTextures.ToArray(), 2);
             Dictionary<Rect, Texture2D> lookup = allTextures.ToDictionary(t => rects[allTextures.IndexOf(t)]);
 
@@ -439,72 +469,180 @@ namespace WildfrostHopeMod.Utils
                     glyphRect = new((int)(rect.x * atlas.width), (int)(rect.y * atlas.height), (int)(rect.width * atlas.width), (int)(rect.height * atlas.height)),
                     index = (uint)spriteAsset.spriteGlyphTable.Count, // otherwise defaults to index 0
                     metrics = new(170.6667f, 170.6667f, -10, 150, 150),
-                    scale = 1.5f,
-                    /*/// "sprite" is not needed, but this is currently useful to see the name of spriteglyphs
-                    sprite = new Func<Sprite>(() => 
+                    scale = scale,
+                    /// "sprite" is not needed, but this is currently useful to see the name of spriteglyphs
+                    sprite = new Func<Sprite>(() =>
                     {
                         Texture2D tex = lookup[rect];
-                        Sprite s = null;
-                        new Action(() =>
-                        {
-                            s = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), Vector2.zero);
-                            s.name = tex.name;
-                        })
-                        // If need to avoid Sprite.Create for performance, comment this out
-                        .TimedInvoke();
-                        return s; }).Invoke()*/
+                        Sprite s = Sprite.Create(tex, Rect.zero, Vector2.zero);
+                        s.name = "[VFXMOD] " + tex.name;
+                        return s;
+                    }).Invoke()
                 };
+
                 spriteAsset.spriteGlyphTable.Add(spriteGlyph);
-                Debug.LogWarning($"[{spriteAsset.name}] adds glyph [{lookup[rect].name}]");
+                //Debug.LogWarning($"[{spriteAsset.name}] adds glyph [{lookup[rect].name}]");
                 TMP_SpriteCharacter spriteCharacter = new(spriteGlyph.index, spriteGlyph) { name = lookup[rect].name };
                 spriteAsset.spriteCharacterTable.Add(spriteCharacter);
             }
-
+            Debug.LogWarning($"[{spriteAsset.name}] adds glyphs [{allTextures.Join(t => t.name)}]");
             spriteAsset.UpdateLookupTables();
             //TMP_Settings.defaultSpriteAsset.fallbackSpriteAssets.Add(spriteAsset);
             return spriteAsset;
         }
-
-        public static GameObject CreateIcon(WildfrostMod modOrNull, string name, Sprite sprite, string type, string copyTextFrom, Color textColor, KeywordData[] keys)
+        public static void AddSprites(this TMP_SpriteAsset spriteAsset, float scale, string directoryWithPNGs = null, Texture2D[] textures = null, Sprite[] sprites = null)
         {
-            GameObject gameObject = new GameObject(name);
-            UnityEngine.Object.DontDestroyOnLoad(gameObject);
-            gameObject.SetActive(false);
-            StatusIcon icon = gameObject.AddComponent<StatusIcon>();
-            Dictionary<string, GameObject> cardIcons = CardManager.cardIcons;
-            if (!copyTextFrom.IsNullOrEmpty())
-            {
-                GameObject text = cardIcons[copyTextFrom].GetComponentInChildren<TextMeshProUGUI>().gameObject.InstantiateKeepName();
-                text.transform.SetParent(gameObject.transform);
-                icon.textElement = text.GetComponent<TextMeshProUGUI>();
-                icon.textColour = textColor;
-                icon.textColourAboveMax = textColor;
-                icon.textColourBelowMax = textColor;
-            }
-            icon.onCreate = new UnityEngine.Events.UnityEvent();
-            icon.onDestroy = new UnityEngine.Events.UnityEvent();
-            icon.onValueDown = new UnityEventStatStat();
-            icon.onValueUp = new UnityEventStatStat();
-            icon.afterUpdate = new UnityEngine.Events.UnityEvent();
-            UnityEngine.UI.Image image = gameObject.AddComponent<UnityEngine.UI.Image>();
-            image.sprite = sprite;
-            CardHover cardHover = gameObject.AddComponent<CardHover>();
-            cardHover.enabled = false;
-            cardHover.IsMaster = false;
-            CardPopUpTarget cardPopUp = gameObject.AddComponent<CardPopUpTarget>();
-            cardPopUp.keywords = keys;
-            cardHover.pop = cardPopUp;
-            RectTransform rectTransform = gameObject.GetComponent<RectTransform>();
-            rectTransform.anchorMin = Vector2.zero;
-            rectTransform.anchorMax = Vector2.zero;
-            rectTransform.sizeDelta *= 0.01f;
-            gameObject.SetActive(true);
-            icon.type = type;
-            cardIcons[type] = gameObject;
+            if (spriteAsset == null)
+                return;
 
-            return gameObject;
+            string name = spriteAsset.name;
+            List<Texture2D> allTextures = ConvertToTexture2D(directoryWithPNGs, textures, sprites);
+            string newts = allTextures.Join(t => t.name);
+            foreach (var glyph in spriteAsset.spriteGlyphTable)
+            {
+                if (glyph.sprite && glyph.sprite.name.StartsWith("[VFXMOD] "))
+                    allTextures.Add(glyph.sprite.texture);
+            }
+
+            //Debug.LogError(name + ".Sheet has " + allTextures.Count);
+
+            // Initialise the texture atlas
+            Texture2D atlas = new(1 << 12, 1 << 12){ name = name };
+            Rect[] rects = atlas.PackTextures(allTextures.ToArray(), 2);
+            Dictionary<Rect, Texture2D> lookup = allTextures.ToDictionary(t => rects[allTextures.IndexOf(t)]);
+
+            // Initialise the material with the texture atlas
+            Shader shader = Shader.Find("TextMeshPro/Sprite");
+            Material material = new(shader);
+            material.SetTexture(ShaderUtilities.ID_MainTex, atlas);
+
+            //HashSet<string> previousGlyphNames = spriteAsset.spriteCharacterTable.Select(c => c.name).ToHashSet();
+
+            // Create a new sprite asset
+            new Action<TMP_SpriteAsset>(s =>
+            {
+                s.spriteGlyphTable.Clear();
+                s.spriteCharacterTable.Clear();
+                s.material = material;
+                s.spriteSheet = atlas;
+                s.UpdateLookupTables();
+            }).Invoke(spriteAsset);
+
+            // Add each rect as a SpriteCharacter
+            foreach (var rect in rects)
+            {
+                (float targetWidth, float targetHeight) = (1, 1);
+                (float width, float height) = (rect.width * atlas.width, rect.height * atlas.height);
+                //Debug.LogError($"FOR TARGETS OF {lookup[rect].name}: " + (width, height));
+                if (width != height && width != 0 && height != 0)
+                {
+                    targetWidth = width / height;
+                }
+                //Debug.LogWarning("GOT TARGETS: " + (targetWidth, targetHeight));
+                targetWidth *= 170; targetWidth += .6667f;
+                targetHeight *= 170; targetHeight += .6667f;
+
+                float padding = 0.05f * (targetHeight < targetWidth ? targetHeight : targetWidth);
+
+                float bearingX = -padding;
+                float bearingY = 135;
+                float advance = targetWidth - 2*padding;
+
+                TMP_SpriteGlyph spriteGlyph = new()
+                {
+                    glyphRect = new((int)(rect.x * atlas.width), (int)(rect.y * atlas.height), (int)(rect.width * atlas.width), (int)(rect.height * atlas.height)),
+                    index = (uint)spriteAsset.spriteGlyphTable.Count, // otherwise defaults to index 0
+                    metrics = new(targetWidth, targetHeight, bearingX, bearingY, advance),
+                    scale = scale,
+                    /// "sprite" is not needed, but this is currently useful to see the name of spriteglyphs
+                    sprite = new Func<Sprite>(() =>
+                    {
+                        Texture2D tex = lookup[rect];
+                        Sprite s = Sprite.Create(tex, Rect.zero, Vector2.zero);
+                        s.name = "[VFXMOD] " + tex.name;
+                        return s;
+                    }).Invoke()
+                };
+                spriteAsset.spriteGlyphTable.Add(spriteGlyph);
+
+
+                /*if (!previousGlyphNames.Contains(lookup[rect].name))
+                    Debug.LogWarning($"[{spriteAsset.name}] adds glyph [{lookup[rect].name}]");*/
+                TMP_SpriteCharacter spriteCharacter = new(spriteGlyph.index, spriteGlyph) { name = lookup[rect].name };
+                spriteAsset.spriteCharacterTable.Add(spriteCharacter);
+            }
+
+            Debug.LogWarning($"[{spriteAsset.name}] adds glyphs [{newts}]");
+            spriteAsset.UpdateLookupTables();
         }
 
+        /// <summary>
+        /// Remember to override your mod's SpriteAsset, AND use .RegisterSpriteAsset()
+        /// </summary>
+        /// <param name="directoryWithPNGs"></param>
+        /// <param name="textures">Unreadable textures will be remade. This is expensive!</param>
+        /// <param name="sprites"></param>
+        /// <returns></returns>
+        public static TMP_SpriteAsset CreateSpriteAsset(string name, string directoryWithPNGs = null, Texture2D[] textures = null, Sprite[] sprites = null)
+        {
+            return CreateSpriteAsset(name, 2f, directoryWithPNGs, textures, sprites);
+        }
+        public static void AddSprites(this TMP_SpriteAsset spriteAsset, string directoryWithPNGs = null, Texture2D[] textures = null, Sprite[] sprites = null)
+        {
+            spriteAsset.AddSprites(2f, directoryWithPNGs, textures, sprites);
+        }
+
+        public static Sprite GetCardSprite(CardData cardData, string rename)
+        {
+            Card card = CardManager.Get(cardData, null, null, false, false);
+            card.gameObject.SetLayerRecursively(7);
+            static void WaitCoroutine(IEnumerator func)
+            {
+                while (func != null && func.MoveNext())
+                {
+                    if (func.Current != null)
+                    {
+                        IEnumerator num;
+                        try
+                        {
+                            num = (IEnumerator)func.Current;
+                        }
+                        catch (InvalidCastException)
+                        {
+                            if (func.Current.GetType() == typeof(WaitForSeconds))
+                                Debug.LogWarning("Skipped call to WaitForSeconds. Use WaitForSecondsRealtime instead.");
+                            return;  // Skip WaitForSeconds, WaitForEndOfFrame and WaitForFixedUpdate
+                        }
+                        WaitCoroutine(num);
+                    }
+                }
+            }
+            WaitCoroutine(card.UpdateData(false));
+            card.transform.position = Vector3.zero;
+            GameObject newCameraObject = new GameObject("NewCamera");
+            ExportCards exportCards = new();
+            exportCards._camera = newCameraObject.GetOrAdd<Camera>();
+            exportCards._camera.CopyFrom(Camera.main);
+            exportCards._camera.cullingMask = 1 << card.gameObject.layer;
+            bool big = cardData.cardType.name == "Boss";
+            Texture2D texture2D = new Texture2D(400, big ? 700 : 500, TextureFormat.ARGB32, mipChain: false);
+            RenderTexture renderTexture = new RenderTexture(Screen.width, Screen.height, 24);
+            exportCards.camera.targetTexture = renderTexture;
+            exportCards.camera.Render();
+            RenderTexture previousTexture = RenderTexture.active;
+            RenderTexture.active = renderTexture;
+            texture2D.ReadPixels(new Rect(renderTexture.width / 2 - 200, Screen.height / 2 - (big ? 350 : 250), 400, big ? 700 : 500), 0, 0);
+            texture2D.Apply();
+            RenderTexture.active = previousTexture;
+
+            CardManager.ReturnToPool(card);
+            newCameraObject.Destroy();
+            exportCards.Destroy();
+
+            Sprite result = Sprite.Create(texture2D, new Rect(0, 0, texture2D.width, texture2D.height), 0.5f * Vector2.one, 100, 0, SpriteMeshType.FullRect);
+            result.name = rename;
+            return result;
+        }
     }
 
     //[HarmonyPatch(typeof(PopUpAddStatsSystem), nameof(PopUpAddStatsSystem.PopupCreated))]

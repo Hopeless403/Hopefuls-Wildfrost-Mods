@@ -279,13 +279,13 @@ namespace WildfrostHopeMod.CommandsConsole
                             int count = 1;
                             string statusName = string.Join(" ", strArray);
                             if (!AddressableLoader.IsGroupLoaded("StatusEffectData")) yield return AddressableLoader.LoadGroup("StatusEffectData");
-                            IEnumerable<StatusEffectData> source = AddressableLoader.GetGroup<StatusEffectData>("StatusEffectData").Where(a => (a is not StatusEffectApplyX || a is StatusEffectApplyXInstant) && string.Equals(a.name, statusName, StringComparison.CurrentCultureIgnoreCase));
+                            IEnumerable<StatusEffectData> source = AddressableLoader.GetGroup<StatusEffectData>("StatusEffectData").Where(a => (a is not StatusEffectApplyX || a is StatusEffectApplyXInstant || a.visible) && string.Equals(a.name, statusName, StringComparison.CurrentCultureIgnoreCase));
                             if (source.Any())
                                 statusData = source.First();
                             else if (strArray.Length > 1 && int.TryParse(strArray.Last(), out count))
                             {
                                 statusName = string.Join(" ", strArray.RangeSubset(0, strArray.Length - 1));
-                                source = AddressableLoader.GetGroup<StatusEffectData>("StatusEffectData").Where(a => (a is not StatusEffectApplyX || a is StatusEffectApplyXInstant) && string.Equals(a.name, statusName, StringComparison.CurrentCultureIgnoreCase));
+                                source = AddressableLoader.GetGroup<StatusEffectData>("StatusEffectData").Where(a => (a is not StatusEffectApplyX || a is StatusEffectApplyXInstant || a.visible) && string.Equals(a.name, statusName, StringComparison.CurrentCultureIgnoreCase));
                                 if (source.Any())
                                     statusData = source.First();
                             }
@@ -311,7 +311,7 @@ namespace WildfrostHopeMod.CommandsConsole
             public override IEnumerator GetArgOptions(string currentArgs)
             {
                 if (!AddressableLoader.IsGroupLoaded("StatusEffectData")) yield return AddressableLoader.LoadGroup("StatusEffectData"); // !a.visible && 
-                IEnumerable<StatusEffectData> source = AddressableLoader.GetGroup<StatusEffectData>("StatusEffectData").Where(a => (a is not StatusEffectApplyX || a is StatusEffectApplyXInstant) && a.name.ToLower().Contains(currentArgs.ToLower()));
+                IEnumerable<StatusEffectData> source = AddressableLoader.GetGroup<StatusEffectData>("StatusEffectData").Where(a => (a is not StatusEffectApplyX || a is StatusEffectApplyXInstant || a.visible) && a.name.ToLower().Contains(currentArgs.ToLower()));
                 predictedArgs = source.Select(traitData => traitData.name).ToArray();
             }
         }

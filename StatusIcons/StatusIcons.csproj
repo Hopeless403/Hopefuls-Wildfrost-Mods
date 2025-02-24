@@ -560,11 +560,10 @@
     </Reference>
     <Reference Include="WildfrostHopeMod.Utils">
       <HintPath>..\..\Wildfrost_Data\StreamingAssets\Mods\GLobal\WildfrostHopeMod.Utils.dll</HintPath>
+      <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="StatusIconCustom.cs" />
-    <Compile Include="StatusIcons Behaviour.cs" />
     <Compile Include="Main StatusIcons Mod.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -579,6 +578,7 @@
     <ProjectReference Include="..\VFX Tests\VFX Tests.csproj">
       <Project>{c949a8ee-ef2e-47f4-becf-78fd6ab53edc}</Project>
       <Name>VFX Tests</Name>
+      <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

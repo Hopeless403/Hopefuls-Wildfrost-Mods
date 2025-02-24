@@ -40,8 +40,79 @@ namespace WildFlipper
                 //.SetStartWithEffect(builders.Select(b => new CardData.StatusEffectStacks(b.Build(), 1)).ToArray())
                 .SubscribeToAfterAllBuildEvent(c => c.startWithEffects = [
                     instance.CreateEffectStack("Blobby", 1)])
-                .WithTargetMode(nameof(TargetModeAll))
+                .WithTargetMode(new Scriptable<TargetModePierce>())
                 ;
+
+            public class TargetModePierce : TargetMode
+            {
+                public override bool TargetRow => true;
+
+                public override Entity[] GetPotentialTargets(
+                    Entity entity,
+                    Entity target,
+                    CardContainer targetContainer)
+                {
+                    var entitySet = new HashSet<Entity>();
+
+                    TargetModeBasic basic = new Scriptable<TargetModeBasic>();
+
+                    var entities = basic.GetPotentialTargets(entity, target, targetContainer);
+                    entitySet.AddRange(entities ?? []);
+
+                    if (entitySet.Count <= 0)
+                    {
+                        return null;
+                    }
+
+                    var behind = GetBehind(entity, entities.First());
+
+                    if (behind != null)
+                    {
+                        entities = basic.GetPotentialTargets(entity, behind, targetContainer);
+                        entitySet.AddRange(entities ?? []);
+                    }
+
+                    return entitySet.Count <= 0 ? null : entitySet.ToArray();
+                }
+
+                public override Entity[] GetSubsequentTargets(
+                    Entity entity,
+                    Entity target,
+                    CardContainer targetContainer)
+                {
+                    return GetTargets(entity, target, targetContainer);
+                }
+
+                private static Entity GetBehind(Entity entity, Entity target)
+                {
+                    //   Entity target = hit.target;
+                    // CardContainer container = target.containers[0];
+                    // int index1 = container.IndexOf(target);
+                    // int index2 = Mathf.Min(index1 + this.GetAmount(), container.max - 1);
+
+                    foreach (var cardContainer in target.actualContainers.ToArray())
+                    {
+                        if (!(cardContainer is CardSlot cardSlot) || !(cardContainer.Group is CardSlotLane group))
+                        {
+                            continue;
+                        }
+
+                        int index = group.IndexOf(target) + 1;
+                        if (index >= group.Count) continue;
+                        var rowEntity = group[index];
+
+                        foreach (var row in entity.containers)
+                        if (row is CardSlotLane lane && rowEntity.InContainerGroup(Battle.instance.GetOppositeRow(lane)))
+                            return rowEntity;
+                    }
+
+                    return null;
+                }
+            }
+
+
+
+
 
             public StatusEffectDataBuilder[] builders =>
                 [

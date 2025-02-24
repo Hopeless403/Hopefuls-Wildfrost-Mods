@@ -50,43 +50,72 @@ namespace CardEditor
         public override void Load()
         {
             base.Load();
-            Resources.FindObjectsOfTypeAll<Sprite>().Update(SpriteHandler.ExportSprite);
+            //Resources.FindObjectsOfTypeAll<Sprite>().Update(SpriteHandler.ExportSprite);
 
-
-/*
-            foreach (var card in AddressableLoader.GetGroup<CardData>("CardData"))
-                if (card.mainSprite && card.mainSprite?.name != "Nothing" && !false)
-                {
-                    //ExportSprite(card);
-                    //card.mainSprite = ImagePath($"{card.name} ({card.title}).png").ToSprite();
-                }
-
-            _ = typeof(UnityExplorer.ExplorerStandalone) 
-             ?? typeof(UnityExplorer.ExplorerCore)
-             ?? typeof(UnityExplorer.UI.UIManager);
-
-            UiBase = UniversalUI.RegisterUI(PrefixGUID(DateTime.Now.ToString()), null);
-            GameObject.DontDestroyOnLoad(UIRoot);
-            UniverseLib.Universe.Init(
-                onInitialized: LateInit,
-                logHandler: (s, type) => Debug.Log($"[{Title} U] {s}")
-                );
-            
-            behaviour = new GameObject(Title);
-            GameObject.DontDestroyOnLoad(behaviour);
-            behaviour.hideFlags = HideFlags.HideInHierarchy | HideFlags.DontUnloadUnusedAsset |
-                                  HideFlags.HideInInspector | HideFlags.NotEditable;
-            
-            var e = behaviour.AddComponent<CardEditorModBehaviour>();
-
-            var map = Addressables.LoadContentCatalogAsync(ImagePath("catalog.json")).WaitForCompletion() as ResourceLocationMap;
-            snowbo = Addressables.LoadAssetAsync<UnityEngine.Object>("Assets/_hope.BabySnowbo.asset").WaitForCompletion();
-            Debug.LogWarning((snowbo, snowbo?.name, snowbo?.GetType()));
-            if (snowbo)
+            foreach (var battle in AddressableLoader.GetGroup<BattleData>(nameof(BattleData)))
             {
-                LogWarning("SNOWBO!!");
-                AddressableLoader.AddToGroup<CardData>(typeof(CardData).Name, snowbo as CardData);
-            }*/
+                SpriteHandler.ExportSprite(battle.sprite, $"battle_{battle.name}");
+            }
+            foreach (var battle in AddressableLoader.GetGroup<CampaignNodeType>(nameof(CampaignNodeType)))
+            {
+                if (battle.mapNodeSprite)
+                    SpriteHandler.ExportSprite(battle.mapNodeSprite, $"map_{battle.name}");
+                else if (battle.mapNodePrefab?.spriteOptions?.Count() > 0)
+                    SpriteHandler.ExportSprite(battle.mapNodePrefab.spriteOptions[0], $"map_{battle.name}");
+                else Debug.LogError("FUCK " + battle.name);
+                if (battle.mapNodePrefab?.spriteOptions?.Count() > 1)
+                    Debug.LogError($"AYOAYWOEYOAWYDOYAOW [{battle.name}] [{battle.mapNodePrefab.spriteOptions?.Count()}]");
+            }
+            foreach (var battle in AddressableLoader.GetGroup<ClassData>(nameof(ClassData)))
+            {
+                SpriteHandler.ExportSprite(battle.flag, $"tribe_{battle.name}");
+            }
+
+            new Dictionary<string, object>
+            {
+                { "key", "value" }
+            };
+
+            new Dictionary<string, object>
+            {
+                ["key"] = "value"
+            };
+
+
+            /*
+                        foreach (var card in AddressableLoader.GetGroup<CardData>("CardData"))
+                            if (card.mainSprite && card.mainSprite?.name != "Nothing" && !false)
+                            {
+                                //ExportSprite(card);
+                                //card.mainSprite = ImagePath($"{card.name} ({card.title}).png").ToSprite();
+                            }
+
+                        _ = typeof(UnityExplorer.ExplorerStandalone) 
+                         ?? typeof(UnityExplorer.ExplorerCore)
+                         ?? typeof(UnityExplorer.UI.UIManager);
+
+                        UiBase = UniversalUI.RegisterUI(PrefixGUID(DateTime.Now.ToString()), null);
+                        GameObject.DontDestroyOnLoad(UIRoot);
+                        UniverseLib.Universe.Init(
+                            onInitialized: LateInit,
+                            logHandler: (s, type) => Debug.Log($"[{Title} U] {s}")
+                            );
+
+                        behaviour = new GameObject(Title);
+                        GameObject.DontDestroyOnLoad(behaviour);
+                        behaviour.hideFlags = HideFlags.HideInHierarchy | HideFlags.DontUnloadUnusedAsset |
+                                              HideFlags.HideInInspector | HideFlags.NotEditable;
+
+                        var e = behaviour.AddComponent<CardEditorModBehaviour>();
+
+                        var map = Addressables.LoadContentCatalogAsync(ImagePath("catalog.json")).WaitForCompletion() as ResourceLocationMap;
+                        snowbo = Addressables.LoadAssetAsync<UnityEngine.Object>("Assets/_hope.BabySnowbo.asset").WaitForCompletion();
+                        Debug.LogWarning((snowbo, snowbo?.name, snowbo?.GetType()));
+                        if (snowbo)
+                        {
+                            LogWarning("SNOWBO!!");
+                            AddressableLoader.AddToGroup<CardData>(typeof(CardData).Name, snowbo as CardData);
+                        }*/
 
             //ExportSprite(Get<CardData>("Snoolf"));
             //Get<CardData>("SplitBoss").scriptableImagePrefab = SplitBoss.Build();
@@ -95,7 +124,7 @@ namespace CardEditor
         [HarmonyPatch(typeof(Console), nameof(Console.Toggle))]
         public class PatchConsole
         {
-            static void Postfix() => UniversalUI.SetUIActive(UiBase.ID, !Console.active);
+            //static void Postfix() => UniversalUI.SetUIActive(UiBase.ID, !Console.active);
         }
 
         public override void Unload()

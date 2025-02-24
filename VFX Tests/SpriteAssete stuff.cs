@@ -11,8 +11,12 @@ namespace WildfrostHopeMod.VFX
 {
     public static class SpriteAssetExt
     {
-        public static void RegisterSpriteAsset(this TMP_SpriteAsset spriteAsset) =>
+        public static void RegisterSpriteAsset(this TMP_SpriteAsset spriteAsset)
+        {
+            //Debug.LogWarning("ADDING THE FALLBACK: " +  spriteAsset.name);
             TMP_Settings.defaultSpriteAsset.fallbackSpriteAssets.Add(spriteAsset);
+        }
+            
         public static void UnRegisterSpriteAsset(this TMP_SpriteAsset spriteAsset) =>
             TMP_Settings.defaultSpriteAsset.fallbackSpriteAssets.Remove(spriteAsset);
     }

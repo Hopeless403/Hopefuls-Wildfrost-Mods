@@ -17,7 +17,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
+    <DebugType>embedded</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>C:\Program Files %28x86%29\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\StreamingAssets\Mods\GLobal\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
@@ -561,6 +561,7 @@
   <ItemGroup>
     <Compile Include="mgGIF.cs" />
     <Compile Include="Mod References.cs" />
+    <Compile Include="More Mod References.cs" />
     <None Include="Main Template Mod.cs" />
   </ItemGroup>
   <ItemGroup>

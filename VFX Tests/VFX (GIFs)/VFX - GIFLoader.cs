@@ -205,7 +205,6 @@ public partial class GIFLoader
         gifAnimator.enabled = true;
 
 
-        Debug.LogWarning("IS IT OKAY?");
         Debug.LogWarning($"[VFX Tools] Created prefab: [{name}] with ID {prefab.GetInstanceID()}!");
         return true;
     }

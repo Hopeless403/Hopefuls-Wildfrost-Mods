@@ -69,7 +69,7 @@ namespace WildfrostHopeMod
             FixMissingConfigs(mod); // Miya still didn't do this >:(
             JSONHandler.SaveConfigsToSettingsJSON(mod);
             if (initialised) PatchJournal.CreateConfigs(mod);
-            Debug.LogWarning($"""what happened to the section? {GetConfigSection(mod).section?.gameObject.activeSelf}""");
+            //Debug.LogWarning($"""what happened to the section? {GetConfigSection(mod).section?.gameObject.activeSelf}""");
         }
         public override void Unload()
         {

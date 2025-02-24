@@ -10,6 +10,16 @@ namespace WildfrostHopeMod
 {
     public partial class ConfigManager
     {
+        [HarmonyPatch(typeof(WildfrostMod), nameof(WildfrostMod.Load))]
+        static class PatchLoadMod
+        {
+            static void Postfix(WildfrostMod __instance)
+            {
+                Debug.LogError("DOING SECTION: " + __instance.Title);
+                if (initialised) PatchJournal.CreateConfigs(__instance);
+            }
+        }
+
         [HarmonyPatch(typeof(WildfrostMod), nameof(WildfrostMod.SetLastMods))]
         static class PatchLastMods
         {

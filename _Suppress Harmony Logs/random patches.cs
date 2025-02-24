@@ -2,6 +2,7 @@
 using FMODUnity;
 using HarmonyLib;
 using HarmonyLib.Public.Patching;
+using ICSharpCode.Decompiler.CSharp.Syntax;
 using Mono.Cecil.Cil;
 using NaughtyAttributes;
 using System;
@@ -11,98 +12,103 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.Events;
+using UnityEngine.Localization;
 using UnityEngine.SceneManagement;
 using WildfrostHopeMod.HarmonySuppressor;
 using OpCodes = System.Reflection.Emit.OpCodes;
 
-[HarmonyPatch]
+//[HarmonyPatch]
 public class Patches
 {
     //[HarmonyPostfix]
-    [HarmonyPatch(typeof(AssetLoader), nameof(AssetLoader.Awake))]
+    //[HarmonyPatch(typeof(AssetLoader), nameof(AssetLoader.Awake))]
     static void Awake()
     {
-        Events.OnEntityDrag += Focus;
-        Events.OnEntityPlace += Unfocus;
+        //Events.OnEntityDrag += Focus;
+        //Events.OnEntityPlace += Unfocus;
         foreach (var invoker in typeof(Events).GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly))
         {
             if (invoker.Name.StartsWith("add_") || invoker.Name.StartsWith("remove_"))
             {
                 HarmonySuppressorPlugin.harmony.Patch(
-                original: invoker,
-                prefix: new HarmonyMethod(typeof(Patches).GetMethod(nameof(AddDebugger)))
-                );
+                    original: invoker
+                    ,prefix: new HarmonyMethod(typeof(Patches).GetMethod(nameof(AddDebugger)))
+                    );
                 continue;
             }
             //Debug.LogWarning($"Trying to patch [{invoker.Name}]");
             HarmonySuppressorPlugin.harmony.Patch(
-                original: invoker,
-                prefix: new HarmonyMethod(typeof(Patches).GetMethod(nameof(Debugger)))
+                original: invoker
+                ,prefix: new HarmonyMethod(typeof(Patches).GetMethod(nameof(Debugger)))
                 );
-            //AccessTools.GetMethodNames(Events.OnAbilityTargetAdd);
-            AccessTools.GetFieldNames(typeof(Events));
+        }
+
+        foreach (var invoker in typeof(StatusEffectData).GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
+        {
+            //Debug.LogWarning($"Trying to patch [{invoker.Name}]");
+            if (invoker.Name.StartsWith("add_") || invoker.Name.StartsWith("remove_"))
+            {
+                HarmonySuppressorPlugin.harmony.Patch(
+                    original: invoker
+                    //, prefix: new HarmonyMethod(typeof(Patches).GetMethod(nameof(EffectAddDebugger)))
+                    );
+                continue;
+            }
+            if (invoker.Name.StartsWith("get_"))
+                continue;
+
+            if (!(invoker.Name.EndsWith("Event") || invoker.Name.EndsWith("Routine") || invoker.Name == "Init" || invoker.Name == "Apply"))
+                continue;
+
+            Debug.LogWarning($"~~~~~~~Trying to patch [{invoker.Name}]");
+            HarmonySuppressorPlugin.harmony.Patch(
+                original: invoker
+                , prefix: new HarmonyMethod(typeof(Patches).GetMethod(nameof(EffectDebugger)))
+                );
         }
     }
 
+    internal static string Print(object a)
+    {
+        if (a == null)
+            return $"NULL [{a?.GetType()}]";
+        if (a is Scene scene)
+            return scene.name;
+        if (a is Entity entity)
+            return $"{entity.name} (id: {entity.data?.id})";
+        if (a is CardData cardData)
+            return $"{cardData.name} (id: {cardData.id})";
+        if (a is StatusEffectApply statusEffectApply)
+            return (statusEffectApply.applier?.ToString() ?? "NULL APPLIER", statusEffectApply.target?.ToString() ?? "NULL TARGET", statusEffectApply.effectData?.ToString() ?? "NULL EFFECT", statusEffectApply.count).ToString();
+        return a.ToString();
+    }
 
     
-
-    static void Focus(Entity entity)
-    {
-        CinemaBarSystem.In();
-        CinemaBarSystem.Top.SetPrompt($"Breathe, {entity.name}... breathe", "");
-        CinemaBarSystem.SetSortingLayer("UI2");
-        /*var anim = GameObject.FindObjectOfType<ChangePhaseAnimationSystem>();
-        anim.StartCoroutine(anim.Focus(entity));*/
-        BattleMusicSystem musicSystem = UnityEngine.Object.FindObjectOfType<BattleMusicSystem>();
-        /*if ((UnityEngine.Object)musicSystem != (UnityEngine.Object)null)
-            musicSystem.FadePitchTo(0.3333f);*/
-    }
-    static void Unfocus(Entity entity, CardContainer[] _, bool idk)
-    {
-        /*var anim = GameObject.FindObjectOfType<ChangePhaseAnimationSystem>();
-        anim.StartCoroutine(anim.UnFocus());*/
-        BattleMusicSystem musicSystem = UnityEngine.Object.FindObjectOfType<BattleMusicSystem>();
-        if ((UnityEngine.Object)musicSystem != (UnityEngine.Object)null)
-            musicSystem.FadePitchTo(1);
-
-        CinemaBarSystem.Clear();
-        CinemaBarSystem.Out();
-    }
-
-
-
-
-    static event UnityAction owo;
-
     //[HarmonyPostfix][HarmonyPatch(typeof(Events), nameof(Events.InvokeSlotHover))]
     public static void Debugger(
-        MethodBase __originalMethod, 
+        MethodBase __originalMethod,
         object[] __args
         )
     {
-        //MethodBase __originalMethod = AccessTools.GetOutsideCaller();
-        //nameof(HarmonyManipulator);
-
         try
         {
-            Debug.Log($"[Events] {__originalMethod.Name} ({__args.Where(a => a != null).Join(a => a.ToString())})");
+            Debug.LogWarning($"[Events] {__originalMethod.Name} ({__args.Where(a => a != null).Join(Print)})");
         }
         catch
         {
             Debug.LogError($"[Events] {__originalMethod.Name}");
             foreach (var a in __args)
-                Debug.LogWarning(a);
+            {
+                Debug.LogWarning(Print(a));
+            }
+
         }
-
-        //Debug.LogWarning(AccessTools.GetOutsideCaller());
-
-        //return stringBuilder.ToString();
     }
-
     public static void AddDebugger(
         MethodBase __originalMethod,
         object value
@@ -111,8 +117,53 @@ public class Patches
         if (AccessTools.Method(value.GetType(), nameof(UnityAction.GetInvocationList)).Invoke(value, null) is Delegate[] delegates)
         {
             foreach (var item in delegates)
-                Debug.LogWarning($"[Events] {(
-                    __originalMethod.Name.StartsWith("add_") 
+                Debug.Log($"[Events] {(
+                    __originalMethod.Name.StartsWith("add_")
+                    ? __originalMethod.Name.Substring("add_".Length) + " +="
+                    : __originalMethod.Name.Substring("remove_".Length) + " -="
+                    )} {(item.Method.DeclaringType != null ? item.Method.DeclaringType + "::" : "")}{item.Method.Name}");
+        }
+    }
+
+
+
+
+
+
+
+    public static void EffectDebugger(
+        StatusEffectData __instance,
+        MethodBase __originalMethod,
+        object[] __args
+        )
+    {
+        try
+        {
+            Debug.LogWarning($"[StatusEffect: {__instance?.name} (id: {__instance?.id})] {__originalMethod.Name} ({__args.Where(a => a != null).Join(Print)})");
+        }
+        catch
+        {
+            Debug.LogError($"[StatusEffect: {__instance?.name} (id: {__instance?.id})] {__originalMethod.Name}");
+            foreach (var a in __args)
+            {
+                Debug.LogWarning(Print(a));
+            }
+
+        }
+    }
+
+
+    public static void EffectAddDebugger(
+        StatusEffectData __instance,
+        MethodBase __originalMethod,
+        object value
+        )
+    {
+        if (AccessTools.Method(value.GetType(), nameof(UnityAction.GetInvocationList)).Invoke(value, null) is Delegate[] delegates)
+        {
+            foreach (var item in delegates)
+                Debug.LogWarning($"[StatusEffect: {__instance?.name} (id: {__instance?.id})] {(
+                    __originalMethod.Name.StartsWith("add_")
                     ? __originalMethod.Name.Substring("add_".Length) + " +="
                     : __originalMethod.Name.Substring("remove_".Length) + " -="
                     )} {(item.Method.DeclaringType != null ? item.Method.DeclaringType + "::" : "")}{item.Method.Name}");
@@ -222,4 +273,5 @@ public class Patches
         yield return __result;
         Debug.LogError($">>> POSTFIX");
     }
+
 }

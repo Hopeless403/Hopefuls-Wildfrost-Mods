@@ -35,8 +35,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="0Harmony">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\Managed\0Harmony.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\..\..\Modded - Copy\Wildfrost_Data\Managed\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp-Publicized">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\Managed\Assembly-CSharp-Publicized.dll</HintPath>
@@ -133,6 +132,7 @@
     </Reference>
     <Reference Include="Steamworks">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\Managed\Steamworks.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -564,6 +564,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Main RemoveAchievements Mod.cs" />
+    <None Include="Patching the Patcher - Copy.cs" />
+    <Compile Include="Patching the Patcher.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
