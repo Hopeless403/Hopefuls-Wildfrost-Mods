@@ -563,20 +563,28 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CardScriptGiveRandomUpgrade.cs" />
+    <Compile Include="CardSlotLaneSimplified.cs" />
     <Compile Include="Main WildFlipper Mod - Copy.cs" />
     <Compile Include="Patches\ExtraPopups.cs" />
     <Compile Include="Patches\IgnoreSilence.cs" />
     <Compile Include="Patches\PopUpStats.cs" />
-    <Compile Include="PatchRewards.cs" />
-    <Compile Include="StatusEffectApplyXWhenCardMoves.cs" />
-    <Compile Include="StatusEffectRecycleX.cs" />
-    <Compile Include="StatusEffectWhenCharmedRunScript.cs" />
+    <Compile Include="Patches\PatchRewards.cs" />
+    <Compile Include="Patches\PatchTargetingArrowSystem.cs" />
+    <Compile Include="Statuses\StatusEffectBlockPlayAction.cs" />
+    <Compile Include="Statuses\StatusEffectRetain.cs" />
+    <Compile Include="Statuses\StatusEffectApplyXWhenCardMoves.cs" />
+    <Compile Include="Statuses\StatusEffectRecycleX.cs" />
+    <Compile Include="Statuses\StatusEffectShowPet.cs" />
+    <Compile Include="Statuses\StatusEffectUnshovable.cs" />
+    <Compile Include="Statuses\StatusEffectWhenCharmedRunScript.cs" />
     <Compile Include="TargetConstraintInColumn.cs" />
     <Compile Include="Unused.cs" />
     <Compile Include="WildFlipper Helpers.cs" />
     <Compile Include="WildFlipper Behaviour.cs" />
     <Compile Include="WildFlipper Unison.cs" />
     <Compile Include="WildFlipper Interfaces.cs" />
+    <Compile Include="WildFlipper Assets.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{5B3E24F8-76D7-4981-94BA-F4B1B43CFF92}</ProjectGuid>
+    <ProjectGuid>{E9427B04-36EC-4FEE-AEA3-F34A344F5F66}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>WildfrostHopeMod.CommandsConsole</RootNamespace>
-    <AssemblyName>Commands Console</AssemblyName>
+    <RootNamespace>Mario</RootNamespace>
+    <AssemblyName>Mario</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -17,19 +17,16 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>embedded</DebugType>
+    <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>C:\Program Files %28x86%29\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\StreamingAssets\Mods\Hope Console\</OutputPath>
+    <OutputPath>C:\Program Files %28x86%29\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\StreamingAssets\Mods\Mario\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>2</WarningLevel>
+    <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DocumentationFile>C:\Program Files %28x86%29\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\StreamingAssets\Mods\Hope Console\Commands Console.xml</DocumentationFile>
-    <RegisterForComInterop>false</RegisterForComInterop>
-    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>embedded</DebugType>
+    <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
@@ -39,10 +36,6 @@
   <ItemGroup>
     <Reference Include="0Harmony">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\Managed\0Harmony.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Assembly-CSharp-firstpass">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Assembly-CSharp-Publicized">
@@ -136,10 +129,6 @@
     </Reference>
     <Reference Include="Rewired_Windows_Functions">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\Managed\Rewired_Windows_Functions.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Steamworks">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\Managed\Steamworks.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
@@ -569,58 +558,18 @@
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\Managed\UnityEngine.XRModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="UnityExplorer.STANDALONE.Mono">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\workshop\content\1811990\3145754526\UnityExplorer.STANDALONE.Mono.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="UniverseLib.Mono, Version=1.5.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\workshop\content\1811990\3145754526\UniverseLib.Mono.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Commands\CommandCustomPublish.cs" />
-    <Compile Include="Commands\Commands - WIPs.cs" />
-    <Compile Include="Commands\Commands - Progress.cs" />
-    <Compile Include="Commands\DataBuilder Handlers\GenericDataHandler.cs" />
-    <Compile Include="Commands\DataBuilder Handlers\StatusEffectDataHandler.cs" />
-    <Compile Include="Commands\DataBuilder Handlers\CardDataHandler.cs" />
-    <Compile Include="Commands\DataBuilder Handlers\_DataHandler.cs" />
-    <Compile Include="Commands\Override - Reroll.cs" />
-    <Compile Include="Commands\Override - Setters.cs" />
-    <Compile Include="Commands\Commands - DataBuilders.cs" />
-    <Compile Include="Commands\Commands - Overrides.cs" />
-    <Compile Include="Commands\Commands - Adders.cs" />
-    <Compile Include="Commands\Commands - Avatars.cs" />
-    <Compile Include="Extensions.cs" />
-    <Compile Include="HelpScroller.cs" />
-    <Compile Include="Main ConsoleMod.cs" />
-    <Compile Include="Commands\Console Commands.cs" />
-    <Compile Include="Patches\PatchActionQueuePause.cs" />
-    <Compile Include="Patches\PatchCampaignDataWithEvents.cs" />
-    <Compile Include="Patches\PatchConsoleHovers.cs" />
-    <Compile Include="Patches Main.cs" />
-    <Compile Include="Patches\PatchToggleConfig.cs" />
-    <Compile Include="Patches\PatchWrongExactCommands.cs" />
-    <Compile Include="Patches\PatchFixInfiniteRepeats.cs" />
-    <Compile Include="Patches\PatchRunMultipleCommands.cs" />
-    <Compile Include="Patches\PatchScrollThroughPredicted.cs" />
-    <Compile Include="Patches\PatchTitleAsPrediction.cs" />
-    <Compile Include="UpdateDisplayer.cs" />
+    <Compile Include="Mario Behaviour.cs" />
+    <Compile Include="Main Mario Mod.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="ICSharpCode.Decompiler">
-      <Version>8.2.0.7535</Version>
-    </PackageReference>
-    <PackageReference Include="PolySharp">
-      <Version>1.14.1</Version>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
+    <Content Include="icon.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

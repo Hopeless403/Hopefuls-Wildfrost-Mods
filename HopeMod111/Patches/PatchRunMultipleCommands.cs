@@ -22,13 +22,15 @@ namespace WildfrostHopeMod.CommandsConsole
             [HarmonyPatch(typeof(ConsoleArgsDisplay), nameof(ConsoleArgsDisplay.DisplayArgs))]
             static void DisplayArgs(ref string[] items)
             {
+                if (items.Length == 0) return;
+                
                 var frames = new System.Diagnostics.StackTrace(fNeedFileInfo: true).GetFrames();
                 if (frames.Length >= 3)
                 {
                     var method = frames[2].GetMethod();
                     if (method.DeclaringType.Name.StartsWith("<PredictArgsRoutine>"))
                         items = [.. 
-                            items.OrderByDescending(item => item.Split([" \t// ", " // "], StringSplitOptions.RemoveEmptyEntries).First().Length)
+                            items.OrderByDescending(item => item.Split([" \t// ", " // "], StringSplitOptions.None).First().Length)
                             .ThenByDescending(item => item.FirstOrDefault())
                             ];
                 }

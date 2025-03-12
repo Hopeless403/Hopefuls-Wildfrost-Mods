@@ -22,17 +22,7 @@ namespace WildfrostHopeMod.CommandsConsole
                 Console.commands.RemoveWhere(c => c.id == this.id);
             }
         }
-        private class CommandProgressReset : ConsoleCustom.Command
-        {
-            public static string Name { get; } = AccessTools.GetOutsideCaller().DeclaringType!.Name;
-            public override string id => "progress reset";
-            public override string desc => "delete save data";
-
-            public override void Run(string args)
-            {
-                this.Fail("No");
-            }
-        }
+        
         public class CommandCustomDestroy : Command
         {
             public override string id => "destroy";
@@ -79,6 +69,55 @@ namespace WildfrostHopeMod.CommandsConsole
                 }
             }
         }
+        public class CommandCustomDestroyAll : Command
+        {
+            public override string id => "destroy all";
+
+            public override void Run(string args)
+            {
+                if (References.Player == null)
+                {
+                    Fail("Must be in a campaign to use this command");
+                    return;
+                }
+                
+                if (References.Player.entity.display is CharacterDisplay characterDisplay && characterDisplay.deckDisplay.gameObject.activeSelf)
+                {
+                    if (Battle.instance != null)
+                    {
+                        FailCannotUse();
+                        return;
+                    }
+
+                    Character player = References.Player;
+                    if (player == null || !player.data.inventory.deck.list.Any())
+                    {
+                        FailCannotUse();
+                        return;
+                    }
+
+                    foreach (Entity entity in characterDisplay.deckDisplay.displaySequence.activeCardsGroup.grids[0])
+                    {
+                        entity.RemoveFromContainers();
+                        CardManager.ReturnToPool(entity);
+                    }
+                    CardPopUp.Clear();
+                    UnityEngine.Object.FindObjectOfType<DeckDisplaySequence>()?.activeCardsGroup.UpdatePositions();
+                }
+                else if (Battle.instance)
+                {
+                    foreach (Entity entity in Battle.GetCardsOnBoard(Battle.instance.enemy))
+                    {
+                        entity.RemoveFromContainers();
+                        CardManager.ReturnToPool(entity);
+                    }
+                    ActionQueue.Add(new ActionEndTurn(Battle.instance.player));
+                    Battle.instance.playerCardController.Disable();
+                    CardPopUp.Clear();
+                }
+            }
+        }
+
         public class CommandCustomSpawn : Command
         {
             public override string id => "spawn";
@@ -248,10 +287,15 @@ namespace WildfrostHopeMod.CommandsConsole
 
             public override IEnumerator GetArgOptions(string currentArgs)
             {
-                IEnumerable<DirectoryInfo> source = from data in new DirectoryInfo(SaveSystem.profileFolder).GetDirectories()
-                                                    where data.Name.ToLower().Contains(currentArgs.ToLower())
-                                                    select data;
-                predictedArgs = source.Select((DirectoryInfo d) => d.Name).ToArray().With(currentArgs);
+                string directory = Path.Combine(Application.persistentDataPath, SaveSystem.profileFolder);
+                Debug.LogWarning(directory);
+                IEnumerable<DirectoryInfo> source = new DirectoryInfo(directory).GetDirectories()
+                    .Where(dir => dir.Name.ToLower().Contains(currentArgs.ToLower()))
+                    ;
+                predictedArgs = source.Select((DirectoryInfo d) => d.Name).ToArray();
+                int index = predictedArgs.ToList().IndexOf(SaveSystem.Profile);
+                if (index >= 0)
+                    predictedArgs[index] = $"{SaveSystem.Profile} \t// Current profile";
                 yield break;
             }
         }

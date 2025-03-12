@@ -47,11 +47,8 @@ public partial class GIFLoader
         //Debug.LogWarning($"Creating effect {gifPrefab.name} at {position}");
         GameObject go;
         (go = GameObject.Instantiate(gifPrefab, position, Quaternion.identity)).transform.localScale = scale;
-        var ga = go.GetComponent<GIFAnimator>();
         bool destroyOnEnd = playType == PlayType.applyEffect || playType == PlayType.damageEffect;
         int loops = playType == PlayType.loopingAnimation ? -1 : 1;
-        ga.destroyOnEnd = destroyOnEnd;
-        ga.loops = loops;
         OnEffectPlayed?.Invoke(gifPrefab);
         return go;
     }

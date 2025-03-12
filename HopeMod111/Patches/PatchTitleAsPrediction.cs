@@ -25,8 +25,8 @@ namespace WildfrostHopeMod.CommandsConsole
                     if (!type.IsSubclassOf(commandType) || type.IsAbstract) continue;
                     if (typesToCheck.Any(t => type.Name.ToLowerInvariant().Contains(t)))
                     {
-                        var method = type.GetMethod(nameof(Console.Command.GetArgOptions));
-                        Debug.LogWarning(method.FullDescription());
+                        var method = type.GetMethod(nameof(Console.Command.GetArgOptions), BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                        //Debug.Log(method.FullDescription());
                         if (method != null)
                         Mod.HarmonyInstance.Patch(method,
                             postfix: new HarmonyMethod(typeof(PatchTitleAsPrediction), nameof(Postfix)));

@@ -22,6 +22,7 @@ using static Building;
 using UnityEngine.UIElements;
 using HarmonyLib.Public.Patching;
 using System.Reflection;
+using System.Globalization;
 
 namespace WildfrostHopeMod.VFX
 {
@@ -76,24 +77,9 @@ namespace WildfrostHopeMod.VFX
                 Data4 = "sound name".GetHashCode()
             }
         };
-
+        
         public override void Load()
         {
-            /*FMODUnity.RuntimeManager.CoreSystem.getMasterSoundGroup(out var soundGroup1);
-            Debug.LogWarning(soundGroup1.hasHandle());
-            //soundGroup1.
-            Debug.LogWarning(soundGroup1.getName(out string name, 100));
-            Debug.LogWarning(name);
-            if (soundGroup1.getNumSounds(out int numSounds) == FMOD.RESULT.OK)
-            {
-                for (int i = 0; i < numSounds; i++)
-                {
-                    soundGroup1.getSound(i, out var sound);
-                    sound.getName(out string n, 100);
-                    Debug.LogError(n);
-                }
-            }*/
-
             HopeSFXSystem.PatchAddCommandCreateSFX.Prefix();
 
             parent = new GameObject(Title).transform;
@@ -105,7 +91,7 @@ namespace WildfrostHopeMod.VFX
             if (!Directory.Exists(ImagesDirectory))
                 Directory.CreateDirectory(ImagesDirectory);
 
-            VFX = new GIFLoader(this, ImagesDirectory, GIFLoader.PlayType.applyEffect, true, true);
+            VFX = new GIFLoader(this, ImagesDirectory, GIFLoader.PlayType.applyEffect, false, true);
             VFX.RegisterAllAsApplyEffect();
             GIFLoader.OnEffectPlayed += OnEffectPlayed;
 
@@ -123,7 +109,25 @@ namespace WildfrostHopeMod.VFX
 
             base.Load();
 
+
             //UpdateDisplayer();
+
+            /*FileInfo[] files = new DirectoryInfo(ImagePath("animations/dimension witch_special")).GetFiles();
+            Sprite[] sprites = files.Select(f => f.FullName.ToSpriteFull()).ToArray();
+            float[] delays = files.Select(f =>
+            {
+                string s_delay = Path.GetFileNameWithoutExtension(f.Name).Split(["delay-"], StringSplitOptions.None).Last();
+                if (!float.TryParse(s_delay.Replace("s", ""), NumberStyles.Any, CultureInfo.InvariantCulture, out float delay))
+                    delay = 0;
+                return delay;
+            }).ToArray();
+
+            GIFLoader.CreateParticleSystemFromSprites(sprites, delays, -1, out var prefab, "dimension witch_special");
+            Debug.Log((prefab, prefab?.scene));
+            VFX.prefabs[prefab.name] = prefab;
+            Debug.Log($"[VFX Tools] Loaded [{prefab}] from sprites");
+            prefab.RegisterAsApplyEffect("dimension witch_special");*/
+
         }
 
         public void OnEntityKilled(Entity entity, DeathType death)
@@ -211,6 +215,7 @@ namespace WildfrostHopeMod.VFX
                     SfxSystem.SetCooldown("hit." + type);
                 }
         }
+        
 
         public void PlayShrekMovieOnCreditsScene(Scene scene)
         {
@@ -229,6 +234,9 @@ namespace WildfrostHopeMod.VFX
                 ShrekSprites = new Sprite[ShrekAtlas.spriteCount];
                 ShrekAtlas.GetSprites(ShrekSprites);
                 var ShrekSpritesList = ShrekSprites.Select(t => { t.name = t.name.Split('-')[1].Replace("(Clone)", ""); return t; }).ToList();
+                
+                ShrekSpritesList.RemoveAllWhere(s => s.texture != ShrekSpritesList[0].texture);
+
                 ShrekSpritesList.Sort((x, y) => Convert.ToInt32(x.name).CompareTo(Convert.ToInt32(y.name)));
                 ShrekSprites = ShrekSpritesList.ToArray();
             }
@@ -242,12 +250,12 @@ namespace WildfrostHopeMod.VFX
                 if (credits)
                 {
                     Debug.LogWarning("We're about to start");
-                    var shrekInst = GIFLoader.PlayEffect(shrekObj, Vector3.zero, Vector3.one);
-                    shrekInst.transform.SetParent(credits.transform, true);
+                    var shrekInst = GIFLoader.PlayEffect(shrekObj);
+                    shrekInst.transform.SetParent(credits.transform, false);
                     shrekInst.transform.SetAsFirstSibling();
                     shrekInst.transform.SetLocalRotationY(0);
                     shrekInst.AddComponent<LayoutElement>();
-                    shrekInst.transform.localScale = 2 * Vector3.one;
+                    shrekInst.transform.localScale = 0.02f * Vector3.one;
                 }
             }
             CoroutineManager.Start(playDelay(shrekObj));

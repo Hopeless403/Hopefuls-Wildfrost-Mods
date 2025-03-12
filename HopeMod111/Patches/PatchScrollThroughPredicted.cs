@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
@@ -20,34 +21,63 @@ namespace WildfrostHopeMod.CommandsConsole
             static bool CheckScrollPrevious(Console __instance)
             {
                 string[] args = __instance.argsDisplay.current;
+                if (args == null) return true;
+
+                List<string> scrolledArgs = args.Clone<string>();
                 // If no predicted args, disable scrolling
-                if (__instance.input.text.IsNullOrWhitespace() || PatchRunMultipleCommands.exactCommand == null || !__instance.argsDisplay.gameObject.activeSelf || args?.Length <= 1 || !Mod.scrollConfig)
+                if (Input.GetKey(KeyCode.LeftAlt) || __instance.input.text.IsNullOrWhitespace() || !__instance.argsDisplay.gameObject.activeSelf || args?.Length <= 1 || !Mod.scrollConfig)
                 {
                     return true;
                 }
-                // String is non-empty.
-                // Now check if holding the key, and speedscroll if so
-                string[] scrolledArgs = new string[args.Length];
-                if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.DownArrow))
-                    currentHoldTime += Time.unscaledDeltaTime;
-                else currentHoldTime = 0;
 
-                if (currentHoldTime >= holdTime) tick++;
-                if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetAxis("Mouse ScrollWheel") > 0f || (tick == 3 && Input.GetKey(KeyCode.UpArrow)))
-                    for (int i = 0; i < args.Length; i++)
-                    {
-                        tick = 0;
-                        scrolledArgs[(i + 1) % args.Length] = args[i];
-                    }
-                else if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetAxis("Mouse ScrollWheel") < 0f || (tick == 3 && Input.GetKey(KeyCode.DownArrow)))
-                    for (int i = 0; i < args.Length; i++)
-                    {
-                        tick = 0;
-                        scrolledArgs[(args.Length + i - 1) % args.Length] = args[i];
-                    }
-                if (scrolledArgs.ToHashSet().SetEquals(args))
+                bool updateDisplay = false;
+
+                // String is non-empty.
+                if (PatchRunMultipleCommands.exactCommand == null)
                 {
-                    __instance.argsDisplay.DisplayArgs(scrolledArgs);
+                    if (Input.GetAxis("Mouse ScrollWheel") > 0f)
+                        for (int i = 0; i < args.Length; i++)
+                        {
+                            scrolledArgs[(i + 1) % args.Length] = args[i];
+                            updateDisplay = true;
+                        }
+                    else if (Input.GetAxis("Mouse ScrollWheel") < 0f)
+                        for (int i = 0; i < args.Length; i++)
+                        {
+                            scrolledArgs[(args.Length + i - 1) % args.Length] = args[i];
+                            updateDisplay = true;
+                        }
+
+                    Console.instance.argsDisplay.commands = scrolledArgs
+                        .Select(a => Console.commands.FirstOrDefault(c => a.Contains(c.id))).ToArray();
+                }
+                else
+                {
+                    // Now check if holding the key, and speedscroll if so
+                    if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.DownArrow))
+                        currentHoldTime += Time.unscaledDeltaTime;
+                    else currentHoldTime = 0;
+
+                    if (currentHoldTime >= holdTime) tick++;
+                    if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetAxis("Mouse ScrollWheel") > 0f || (tick == 3 && Input.GetKey(KeyCode.UpArrow)))
+                        for (int i = 0; i < args.Length; i++)
+                        {
+                            tick = 0;
+                            scrolledArgs[(i + 1) % args.Length] = args[i];
+                            updateDisplay = true;
+                        }
+                    else if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetAxis("Mouse ScrollWheel") < 0f || (tick == 3 && Input.GetKey(KeyCode.DownArrow)))
+                        for (int i = 0; i < args.Length; i++)
+                        {
+                            tick = 0;
+                            scrolledArgs[(args.Length + i - 1) % args.Length] = args[i];
+                            updateDisplay = true;
+                        }
+                }
+                
+                if (updateDisplay)
+                {
+                    __instance.argsDisplay.DisplayArgs(scrolledArgs.ToArray());
                     __instance.input.MoveToEndOfLine(false, false);
                 }
                 return false;

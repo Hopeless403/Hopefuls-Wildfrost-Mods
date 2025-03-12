@@ -21,36 +21,27 @@ namespace WildfrostHopeMod.VFX;
 [RequireComponent(typeof(Image))]
 public class ScriptableGIFAnimated : ScriptableCardImage
 {
-    // we use a GIFAnimator to make it easier to list the frames and frame delays
-    public GIFAnimator animatorPrefab;
+    public ParticleSystem animatorPrefab;
+    public ParticleSystem Animator { get; private set; }
     public Sprite defaultSprite;
     public bool shouldAnimate = true;
 
     private int loops = 1;
-    private Sprite[] frames;
-    private float[] delays;
-    private int currentFrame = 0;
-    private float currentDelay = 0;
-
-
-    public Image renderer => gameObject.GetComponent<Image>();
 
     public override void AssignEvent()
     {
-        frames = animatorPrefab.frames;
-        delays = animatorPrefab.delays;
-        renderer.sprite = frames[0];
+        this.Animator = animatorPrefab.InstantiateKeepName();
+        
 
+        renderer.sprite = Animator.textureSheetAnimation.GetSprite(0);
         defaultSprite ??= entity.data.mainSprite;
     }
     public void Update()
     {
-        if (!entity)
-            return;
-
         if (!shouldAnimate)
         {
             renderer.sprite = defaultSprite;
+            Animator.
             return;
         }
 

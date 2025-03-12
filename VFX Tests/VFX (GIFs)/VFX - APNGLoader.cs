@@ -9,6 +9,7 @@ using Dir = System.IO.Directory;
 using WildfrostHopeMod.Utils;
 using UnityEngine.Networking;
 using LibAPNG;
+using static UnityEngine.ParticleSystem;
 
 namespace WildfrostHopeMod.VFX;
 
@@ -89,49 +90,32 @@ public partial class GIFLoader
         
         byte[] data = File.ReadAllBytes(path);
 
-        prefab = new GameObject(name, typeof(SpriteRenderer));
+        List<Texture2D> frames = new();
+        List<float> delays = new();
+        foreach (var apngFrame in apng.Frames)
+        {
+            Texture2D texture = new Texture2D(2, 2);
+            texture.LoadImage(apngFrame.GetStream().ToArray());
+            frames.Add(texture);
+            delays.Add((float)apngFrame.fcTLChunk.DelayNum / apngFrame.fcTLChunk.DelayDen);
+        }
+
+        ParticleSystem particles = HopeUtils
+            .CreateParticleSystem(name, textures: frames.ToArray())
+            .WithDelays(delays.ToArray());
+
+        prefab = particles?.gameObject ?? new GameObject(name, typeof(RectTransform), typeof(ParticleSystem));
+        particles ??= prefab.GetComponent<ParticleSystem>();
+
         if (VFXMod.parent) prefab.transform.SetParent(VFXMod.parent);
         else GameObject.DontDestroyOnLoad(prefab);
-        prefab.SetLayerRecursively(8);
-        prefab.GetComponent<SpriteRenderer>().sortingLayerID = -2147482037;
-        var gifAnimator = prefab.AddComponent<GIFAnimator>();
-        if (gifAnimator == null)
-            return false;
 
-        gifAnimator.frames = new Sprite[0];
-        gifAnimator.originalID = prefab.GetInstanceID();
-        gifAnimator.loops = loops;
-        gifAnimator.destroyOnEnd = destroyOnEnd;
-        {
-            List<Sprite> frames = new();
-            List<float> delays = new();
-            List<Frame> images = new();
+        var fadeOut = particles.colorOverLifetime;
+        fadeOut.enabled = false;
 
-            foreach (var apngFrame in apng.Frames)
-            {
-                images.Add(apngFrame);
-                delays.Add((float)apngFrame.fcTLChunk.DelayNum / apngFrame.fcTLChunk.DelayDen);
-            }
+        MainModule main = particles.main;
+        main.stopAction = destroyOnEnd ? ParticleSystemStopAction.Destroy : ParticleSystemStopAction.Disable;
 
-            frames = images.Select(FrameToSprite).ToList();
-            gifAnimator.frames = frames.ToArray();
-            gifAnimator.delays = delays.ToArray();
-        }
-
-
-        if (gifAnimator.frames.Length == 0)
-        {
-            Debug.LogError($"[VFX Tools] {path} cannot be read!");
-            prefab.Destroy();
-            return false;
-        }
-        /*if (gifAnimator.frames.Length == 1)
-        {
-            Debug.LogError($"[VFX Tools] {path} isn't animated!");
-            prefab.Destroy();
-            return false;
-        }*/
-        gifAnimator.enabled = true;
         Debug.LogWarning($"[VFX Tools] Created prefab: [{name}] with ID {prefab.GetInstanceID()}!");
         return true;
     }

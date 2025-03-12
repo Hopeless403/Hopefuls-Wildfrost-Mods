@@ -1,6 +1,5 @@
 ﻿using Deadpan.Enums.Engine.Components.Modding;
 using HarmonyLib;
-using LibAPNG;
 using System;
 using System.Collections;
 using System.Collections.Generic;

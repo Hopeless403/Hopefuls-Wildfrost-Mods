@@ -28,12 +28,7 @@ namespace WildfrostHopeMod.TemplateMod
 
             base.Load();
 
-            behaviour = new GameObject("HopeTemplateModBehaviour");
-            GameObject.DontDestroyOnLoad(behaviour);
-            behaviour.hideFlags = HideFlags.HideInHierarchy | HideFlags.DontUnloadUnusedAsset |
-                                  HideFlags.HideInInspector | HideFlags.NotEditable;
-
-            var e = behaviour.AddComponent<HopeTemplateModBehaviour>();
+            GameObject.DontDestroyOnLoad(= new GameObject("HopeTemplateModBehaviour", typeof(HopeTemplateModBehaviour)));
         }
 
         public override void Unload()

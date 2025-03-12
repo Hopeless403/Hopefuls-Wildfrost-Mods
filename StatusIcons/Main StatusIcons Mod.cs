@@ -8,7 +8,6 @@ using TMPro;
 using UnityEngine;
 using WildfrostHopeMod.Utils;
 using WildfrostHopeMod.VFX;
-using Extensions = Deadpan.Enums.Engine.Components.Modding.Extensions;
 
 namespace StatusIcons
 {
@@ -18,15 +17,19 @@ namespace StatusIcons
         public override string[] Depends => new string[] { "hope.wildfrost.vfx" };
         public override string Title => "Tutorial: Creating Status Icons";
         public override string Description => "Learn how to make a new status effect with a custom icon!";
+        public static StatusIconsMod instance;
+        public StatusIconsMod(string modDirectory) : base(modDirectory)
+        {
+            instance = this;
+        }
 
-        private bool preLoaded = false; 
-
-
-        public static List<object> assets = [];
         private CardData.StatusEffectStacks SStack(string name, int amount) => new CardData.StatusEffectStacks(Get<StatusEffectData>(name), amount);
 
+        // From Tutorial2
+        public static List<object> assets = new List<object>();
+        private bool preLoaded = false;
 
-        // REQUIRED: this is here to allow our icon to appear in the text box of cards
+        // TODO: This allows for icons in descriptions
         public override TMP_SpriteAsset SpriteAsset => spriteAsset;
         internal static TMP_SpriteAsset spriteAsset;
 
@@ -35,10 +38,7 @@ namespace StatusIcons
             if (!preLoaded)
             {
                 // IMPORTANT: SpriteAsset has to be defined before all icons are made
-                // Allow our icons in card descriptions
-                spriteAsset = HopeUtils.CreateSpriteAsset(Title
-                    //, directoryWithPNGs: ImagePath("Icons")
-                    );
+                spriteAsset = HopeUtils.CreateSpriteAsset(Title);
                 
 
                 CreateModAssets();
@@ -46,6 +46,7 @@ namespace StatusIcons
                 preLoaded = true;
             }
             SpriteAsset.RegisterSpriteAsset();
+
             base.Load();
 
             // TEMPORARY: This tests our icons by giving every companion card their status, when the mod loads
@@ -96,14 +97,35 @@ namespace StatusIcons
             AssetExampleInDetail();
             AssetExampleShort();
         }
+
+        public void CreateAmberIcon()
+        {
+            assets.Add(
+            new KeywordDataBuilder(this)
+            .Create("amber")
+            .WithTitle("Amber")
+            .WithDescription("""
+                Freezes the card in place
+                |Fossilised tree sap, which we call amber, waited for millions of years with the mosquito inside.
+                """)
+            );
+
+            assets.Add(
+            new StatusEffectDataBuilder(this)
+            .Create<StatusEffectSnow>("amber effect") // Can be any StatusEffect class
+            );
+        }
+
+
         public void AssetExampleInDetail()
         {
             assets.AddRange(new object[] {
                     new KeywordDataBuilder(this)    // Nothing different is necessary for Keywords
-                    .Create("amber")                // Make them as you usually would, without icons
+                    .Create("amberkeyword")                // Make them as you usually would, without icons
                     .WithTitle("Amber")
                     .WithDescription("""
-                         |Fossilised tree sap, which we call amber, waited for millions of years with the mosquito inside. 
+                        Freeze!
+                        |Fossilised tree sap, which we call amber, waited for millions of years with the mosquito inside. 
                         
                         Using sophisticated techniques, they extract the preserved blood from the mosquito, and bingo: Dino DNA!
                         """)
@@ -118,7 +140,7 @@ namespace StatusIcons
                     .WithIconGroupName(StatusIconBuilder.IconGroups.counter) // To show up under health icons
 
                     // Icons without text can skip these two altogether
-                    .WithTextColour(new Color(0.2f, 0f, 0f, 0.8f), 
+                    .WithTextColour(new Color(0.1f, 0f, 0f, 0.8f), 
                     textColourAboveMax:new Color(0, 1f, 0f, 0.8f), 
                     textColourBelowMax:new Color(0f, 0f, 1f, 0.8f))          // 80% opacity, very dark red
                     .WithTextShadow(new Color(1f, 1f, 0f, 1f), offsetY:-1f) // Opaque yellow shadow, moved further down (default y offset: -0.75f)
@@ -128,11 +150,11 @@ namespace StatusIcons
                     
                     .WithApplyVFX(VFXMod.instance?.ImagePath("../icon.gif"))         // Replace with your own GIF or APNG filepath
                     .WithApplySFX(VFXMod.instance?.ImagePath("42 - Eyecatch 2.mp3")) // Replace with your own MP3/WAV/OGG etc filepath
-                    .WithKeywords(iconKeywordOrNull:"amber") // the "icon keyword" will be adjusted to show the icon's textbox sprite
+                    .WithKeywords(iconKeywordOrNull:"amberkeyword") // the "icon keyword" will be adjusted to show the icon's textbox sprite
                     ,
 
                     new StatusEffectDataBuilder(this)
-                    .Create<StatusEffectSnow>("amber effect")
+                    .Create<StatusEffectFocus>("amber effect")
                     // Make your effect as usual, except...
                     .Subscribe_WithStatusIcon("amber icon") // All-in-one handler for setting up a status.
                                                      // ONLY ONE ICON PER STATUS!
@@ -178,6 +200,8 @@ namespace StatusIcons
                     ,
 
             });
+
+            //assets.Add();
         }
 
         public void AssetExampleShort()
@@ -218,7 +242,7 @@ namespace StatusIcons
                     ,
 
              });
-            _ = nameof(LocalizationHelper);
+
         }
 
 

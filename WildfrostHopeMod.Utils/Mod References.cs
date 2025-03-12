@@ -19,9 +19,24 @@ using System.Collections;
 using static Building;
 using System.Text.RegularExpressions;
 using UnityEngine.AddressableAssets;
+using static UnityEngine.ParticleSystem;
+using UnityEngine.U2D;
 
 namespace WildfrostHopeMod.Utils
 {
+    public class Scriptable<T> where T : ScriptableObject, new()
+    {
+        readonly Action<T> modifier;
+        public Scriptable() { }
+        public Scriptable(Action<T> modifier) { this.modifier = modifier; }
+        public static implicit operator T(Scriptable<T> scriptable)
+        {
+            T result = ScriptableObject.CreateInstance<T>();
+            scriptable.modifier?.Invoke(result);
+            return result;
+        }
+    }
+
     public class Paths
     {
         public string PluginPath { get; private set; }
@@ -55,6 +70,30 @@ namespace WildfrostHopeMod.Utils
 
     public static partial class Extensions
     {
+        public static bool IsSubclassOfRawGeneric(this Type toCheck, Type generic)
+        {
+            foreach (var method in toCheck.GetMethods())
+            {
+                if (method.Name != "op_Implicit" && method.Name != "op_Explicit")
+                    continue;
+                if (method.ReturnType == toCheck) // skip casts into the current type
+                    continue;
+
+                if (IsSubclassOfRawGeneric(generic, method.ReturnType))
+                    return true;
+            }
+
+            while (toCheck != null && toCheck != typeof(object))
+            {
+                var cur = toCheck.IsGenericType ? toCheck.GetGenericTypeDefinition() : toCheck;
+                if (generic == cur)
+                {
+                    return true;
+                }
+                toCheck = toCheck.BaseType;
+            }
+            return false;
+        }
         public static T? TryCast<T>(this object t) where T : UnityEngine.Object
         {
             if (!typeof(T).IsAssignableFrom(t.GetType())) return null;
@@ -265,8 +304,8 @@ namespace WildfrostHopeMod.Utils
             if (!squarePadding) return ToTexture(sprite, (int)sprite.rect.width, (int)sprite.rect.height);
             if (sprite == null) return null;
             if (sprite.textureRect.width == sprite.texture.width) return sprite.texture;
-            Texture2D newTex = null;
-            new Action(() => newTex = sprite.texture.MakeReadable(sprite.textureRect, squarePadding)).TimedInvoke();
+            Texture2D newTex = sprite.texture.MakeReadable(sprite.textureRect, squarePadding);
+            //new Action(() => newTex = sprite.texture.MakeReadable(sprite.textureRect, squarePadding)).TimedInvoke();
             return newTex;
         }
         public static Texture2D ToTexture(this Sprite sprite, int dstWidth, int dstHeight)
@@ -274,8 +313,8 @@ namespace WildfrostHopeMod.Utils
             if (sprite == null) return null;
             if (sprite.textureRect.width != sprite.texture.width)
             {
-                Texture2D newTex = null;
-                new Action(() => newTex = sprite.texture.MakeReadable(sprite.textureRect, dstWidth, dstHeight)).TimedInvoke();
+                Texture2D newTex = sprite.texture.MakeReadable(sprite.textureRect, dstWidth, dstHeight);
+                //new Action(() => newTex = sprite.texture.MakeReadable(sprite.textureRect, dstWidth, dstHeight)).TimedInvoke();
                 return newTex;
             }
             else return sprite.texture;
@@ -376,20 +415,26 @@ namespace WildfrostHopeMod.Utils
 
     public static partial class HopeUtils
     {
-        
-
-    /// <summary>
-    /// Compile image files, textures, and sprites into one list of converted texture2Ds
-    /// </summary>
-    /// <param name="directoryWithPNGs"></param>
-    /// <param name="textures">Unreadable textures will be remade. This is expensive!</param>
-    /// <param name="sprites"></param>
-    /// <returns></returns>
-    public static List<Texture2D> ConvertToTexture2D(string directoryWithPNGs = null, Texture2D[] textures = null, Sprite[] sprites = null)
+        public static Texture2D PackTextures(this IEnumerable<Texture2D> textures, out Rect[] rects)
         {
+            Texture2D atlas = new(1 << 12, 1 << 12);
+            rects = atlas.PackTextures(textures.ToArray(), 2);
+            return atlas;
+        }
+
+        /// <summary>
+        /// Compile image files, textures, and sprites into one list of converted texture2Ds
+        /// </summary>
+        /// <param name="directoryWithPNGs"></param>
+        /// <param name="textures">Unreadable textures will be remade. This is expensive!</param>
+        /// <param name="sprites"></param>
+        /// <returns></returns>
+        public static List<Texture2D> ConvertToTexture2D(string directoryWithPNGs = null, Texture2D[] textures = null, Sprite[] sprites = null)
+            {
             List<Texture2D> allTextures = [];
 
-            IEnumerable<Texture2D> texturesFromPNGs = directoryWithPNGs.IsNullOrWhitespace() ? [] : Directory.GetFiles(directoryWithPNGs, "*.png", SearchOption.AllDirectories)
+            // TODO: If something broke, change TopDirectory back to AllDirectories (12/03/25)
+            IEnumerable<Texture2D> texturesFromPNGs = directoryWithPNGs.IsNullOrWhitespace() ? [] : Directory.GetFiles(directoryWithPNGs, "*.png", SearchOption.TopDirectoryOnly)
                     .Select(p =>
                     {
                         Texture2D tex = new(1, 1) { name = Path.GetFileNameWithoutExtension(p) };
@@ -417,7 +462,7 @@ namespace WildfrostHopeMod.Utils
 
             IEnumerable<Texture2D> texturesProvided = textures == null || textures.Length == 0
                 ? [] : textures?.Where(t => t != null && t.width > 0 && t.height > 0)
-                     .Select(t => t.isReadable ? t : t.MakeReadable()) ?? [];
+                        .Select(t => t.isReadable ? t : t.MakeReadable()) ?? [];
             foreach (var tex in texturesProvided)
                 if (tex) allTextures.Add(tex);
 
@@ -643,7 +688,190 @@ namespace WildfrostHopeMod.Utils
             result.name = rename;
             return result;
         }
+
+
+
+
+        public static ParticleSystem CreateParticleSystem(string name, string directoryWithPNGs = null, Texture2D[] textures = null, Sprite[] sprites = null)
+        {
+            List<Texture2D> allTextures = ConvertToTexture2D(directoryWithPNGs, textures, sprites);
+
+            // trying to change the "quad" to be the whole sprite and not just the opaque bits
+            for (int i = 0; i < allTextures.Count; i++)
+            {
+                Texture2D tex = allTextures[i];
+                if (!tex.isReadable)
+                    tex = allTextures[i] = tex.MakeReadable();
+
+                (int w, int h) = (tex.width - 1, tex.height - 1);
+                List<(int x, int y)> coords = [
+                    (0,0), (1,0),
+                    (w,h), (w,h-1)
+                    ];
+                foreach ((int x, int y) in coords)
+                    tex.SetPixel(x, y, Color.gray.WithAlpha(0.001984f));
+
+                tex.Apply();
+            }
+
+            Texture2D atlas = allTextures.PackTextures(out Rect[] rects);
+
+            Sprite[] realSprites = new Sprite[allTextures.Count];
+
+            int n = 0;
+            foreach (var rect in rects)
+            {
+                (float width, float height) = (rect.width * atlas.width, rect.height * atlas.height);
+                Rect spriteRect = new((int)(rect.x * atlas.width), (int)(rect.y * atlas.height), (int)(rect.width * atlas.width), (int)(rect.height * atlas.height));
+                string n_name = allTextures[n].name;
+                realSprites[n] = Sprite.Create(atlas, spriteRect, 0.5f * Vector2.one);
+                realSprites[n].name = n_name;
+                n++;
+            }
+
+            return atlas.ToParticleSystem(name, realSprites);
+        }
+        public static ParticleSystem ToParticleSystem(this Texture2D texture, string name, Rect[] spriteRects)
+        {
+            if (!texture.isReadable)
+                texture = texture.MakeReadable();
+
+            Sprite[] realSprites = new Sprite[spriteRects.Length];
+
+            for (int n = 0; n < spriteRects.Length; n++)
+            {
+                Rect spriteRect = spriteRects[n];
+                string n_name = $"{texture.name}_{spriteRect}";
+                realSprites[n] = Sprite.Create(texture, spriteRect, 0.5f * Vector2.one);
+                realSprites[n].name = n_name;
+            }
+
+            return texture.ToParticleSystem(name, realSprites);
+        }
+        public static ParticleSystem ToParticleSystem(this Texture2D texture, string name, Sprite[] spritesFromTexture)
+        {
+            if (texture == null || spritesFromTexture.Any(s => s.texture != spritesFromTexture.FirstOrDefault().texture))
+                throw new ArgumentException($"All spritesFromTexture must be from the same texture {texture}");
+
+            GameObject prefab = new GameObject(name, typeof(RectTransform));
+            prefab.SetActive(false);
+            prefab.AddComponent<ParticleSystem>();
+
+            //if (VFXMod.parent) prefab.transform.SetParent(VFXMod.parent); else 
+            GameObject.DontDestroyOnLoad(prefab);
+
+            prefab.SetLayerRecursively(8);
+
+            ParticleSystemRenderer renderer = prefab.GetOrAdd<ParticleSystemRenderer>();
+            renderer.material = Addressables.LoadAssetAsync<Material>("Assets/Content/Materials/Particle.mat").WaitForCompletion();
+            renderer.sortingLayerName = "ParticlesFront";
+
+            ParticleSystem particles = prefab.GetComponent<ParticleSystem>();
+
+            var fadeOut = particles.colorOverLifetime;
+            fadeOut.enabled = false;
+
+            MainModule main = particles.main;
+            main.duration = 0.1f * spritesFromTexture.Length;
+            main.loop = false;
+            main.startDelay = 0;
+            main.startSpeed = 0;
+            main.startLifetime = main.duration;
+            main.startSize = spritesFromTexture.First().rect.width;
+            main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+            // Cursed way to avoid playing early
+            main.playOnAwake = false; prefab.SetActive(true); main.playOnAwake = true;
+            main.emitterVelocityMode = ParticleSystemEmitterVelocityMode.Transform;
+            main.maxParticles = 1000;
+            main.stopAction = ParticleSystemStopAction.Destroy; // TODO: This should be set to Destroy
+            main.cullingMode = ParticleSystemCullingMode.Automatic;
+
+            EmissionModule emission = particles.emission;
+            emission.enabled = true;
+            emission.rateOverTime = 00;
+            emission.SetBursts([new Burst(0, 1)]);
+
+            ShapeModule shape = particles.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.radius = 0.0001f;
+
+            TextureSheetAnimationModule animation = particles.textureSheetAnimation;
+            animation.enabled = true;
+            animation.startFrame = 0;
+
+            // TODO: Change mode to Grid after compressing sprites to a single sheet
+            animation.mode = ParticleSystemAnimationMode.Sprites;
+            while (animation.spriteCount > 0)
+            {
+                try { animation.RemoveSprite(0); }
+                catch { break; }
+            }
+            //int n = 0;
+            foreach (var frame in spritesFromTexture)
+            {
+                animation.AddSprite(frame);
+            }
+
+            // NOTE: This can be replaced with FPS instead of timer curve
+            animation.timeMode = ParticleSystemAnimationTimeMode.Lifetime;
+            MinMaxCurve timer = animation.frameOverTime;
+            timer.curveMultiplier = 1;
+            // Both time and value are stored as percentages (between 0 and 1)
+            timer.curve = new AnimationCurve(new Keyframe(0, 0), new Keyframe(1, 1));
+            animation.frameOverTime = timer;
+
+            return particles;
+        }
+
+
+
+
+        public static ParticleSystem WithDelays(this ParticleSystem particles, float[] delays)
+        {
+            MainModule main = particles.main;
+            main.duration = delays.Sum();
+            main.startLifetime = main.duration;
+
+            TextureSheetAnimationModule animation = particles.textureSheetAnimation;
+
+            // NOTE: This can be replaced with FPS instead of timer curve
+            animation.timeMode = ParticleSystemAnimationTimeMode.Lifetime;
+            MinMaxCurve timer = animation.frameOverTime;
+            timer.curveMultiplier = 1;
+            timer.curve = new AnimationCurve();
+
+            // Both time and value are stored as percentages (between 0 and 1)
+            float cumulativeDelay = 0f;
+            for (int i = 0; i < delays.Length; i++) // delays.Length
+            {
+                timer.curve.AddKey(cumulativeDelay, i * 1f / delays.Length);
+                cumulativeDelay += delays[i] / delays.Sum();
+            }
+            // IMPORTANT: Need to reassign the timer
+            animation.frameOverTime = timer;
+
+            return particles;
+        }
+
+
+
+
+
+
+
+
+
     }
+
+
+
+
+
+
+
+
+
 
     //[HarmonyPatch(typeof(PopUpAddStatsSystem), nameof(PopUpAddStatsSystem.PopupCreated))]
     public static class PatchPopUpStats

@@ -27,10 +27,31 @@ namespace CardEditor.Visuals
 
             try
             {
+                float pivotLeft = sprite.pivot.x;
+                float pivotBelow = sprite.pivot.y;
+
                 int targetHeight = (int)sprite.rect.height;
                 int targetWidth = (int)sprite.rect.width;
-                int padAbove = Mathf.RoundToInt(sprite.textureRectOffset.y);
-                int padLeft = Mathf.RoundToInt(sprite.textureRectOffset.x);
+
+                int padLeft = Mathf.Max(0, Mathf.FloorToInt(sprite.rect.width- 2 * pivotLeft));
+                float padRight = Mathf.Max(0, Mathf.FloorToInt(2 * pivotLeft - sprite.rect.width));
+                targetWidth = Mathf.CeilToInt(2 * (pivotLeft + padLeft));
+                // want pivotLeft + padLeft = targetWidth/2 = padRight + sprite.rect.width - pivotLeft
+
+
+                int padBelow = Mathf.Max(0, Mathf.FloorToInt(sprite.rect.height - 2 * pivotBelow));
+                targetHeight = Mathf.CeilToInt(2 * (pivotBelow + padBelow));
+
+
+                // want pivotBelow + padBelow = targetHeight/2 = padAbove + sprite.rect.height - pivotBelow
+
+                padLeft += Mathf.RoundToInt(sprite.textureRectOffset.x);
+                padBelow += Mathf.RoundToInt(sprite.textureRectOffset.y);
+
+                int padAbove = padBelow;
+                //int padAbove = Mathf.Max(0, Mathf.FloorToInt(2 * pivotBelow - sprite.rect.height));
+
+
 
                 if (name.StartsWith("battle_") || name.StartsWith("tribe_") || name.StartsWith("map_"))
                 {
@@ -38,6 +59,15 @@ namespace CardEditor.Visuals
                     Debug.LogError(CardEditorMod.texture.width);
                     int targetLength = Mathf.Clamp(CardEditorMod.texture.width, 512, 1024);
                     CardEditorMod.texture = Resize(CardEditorMod.texture, targetLength, targetLength);
+                }
+                else if (name.EndsWith("_presize"))
+                {
+                    targetHeight = (int)sprite.rect.height;
+                    targetWidth = (int)sprite.rect.width;
+                    padAbove = Mathf.RoundToInt(sprite.textureRectOffset.y);
+                    padLeft = Mathf.RoundToInt(sprite.textureRectOffset.x);
+
+                    CardEditorMod.texture = sprite.texture.MakeReadable(sprite.textureRect, targetWidth, targetHeight, padLeft, padAbove);
                 }
                 else 
                     CardEditorMod.texture = sprite.texture.MakeReadable(sprite.textureRect, targetWidth, targetHeight, padLeft, padAbove);

@@ -10,6 +10,8 @@ using WildfrostHopeMod.Utils;
 using UnityEngine.Networking;
 using Deadpan.Enums.Engine.Components.Modding;
 using static Deadpan.Enums.Engine.Components.Modding.Extensions;
+using static UnityEngine.ParticleSystem;
+using HarmonyLib;
 
 namespace WildfrostHopeMod.VFX;
 
@@ -97,6 +99,25 @@ public partial class GIFLoader
     }
 
     public GameObject TryGetPrefab(string name) => prefabs.GetValueOrDefault(PrefixGUID(name, Mod), null) ?? prefabs.GetValueOrDefault(name, null);
+    public GameObject InstantiatePrefab(string name, bool playOnAwake = false)
+    {
+        GameObject original = TryGetPrefab(name);
+        if (!original) return null;
+
+        if (playOnAwake) return original.InstantiateKeepName();
+
+        original.SetActive(false);
+        original.GetComponent<ParticleSystem>().playOnAwake = false;
+
+        var result = original.InstantiateKeepName();
+        result.SetActive(true);
+        result.GetComponent<ParticleSystem>().playOnAwake = true;
+
+        original.SetActive(true);
+        original.GetComponent<ParticleSystem>().playOnAwake = true;
+
+        return result;
+    }
 
     public static bool CreateGifPrefab(string path, int loops, out GameObject prefab, string name = null, bool destroyOnEnd = true)
     {
@@ -108,102 +129,34 @@ public partial class GIFLoader
         
         byte[] data = File.ReadAllBytes(path);
 
-
-
-        /*prefab = new GameObject(name, typeof(RectTransform), typeof(ParticleSystem));
-        if (VFXMod.parent) prefab.transform.SetParent(VFXMod.parent);
-        else GameObject.DontDestroyOnLoad(prefab);
-        prefab.SetLayerRecursively(8);
-        ParticleSystem particles = prefab.GetComponent<ParticleSystem>();
-        ParticleSystem.TextureSheetAnimationModule animation = particles.textureSheetAnimation;
-
-
+        List<Texture2D> frames = new();
+        List<float> delays = new();
         using (var decoder = new Utils.mgGIF.Decoder(data))
         {
-            List<Sprite> frames = new();
-            List<float> delays = new();
-            float delay = 1 / 24;
             var img = decoder.NextImage();
-            var allimg = new List<Utils.mgGIF.Image>();
-
-            bool framesDebugMethod = false;
             while (img != null)
             {
-                if (!framesDebugMethod)
-                {
-                    Texture2D texture = img.CreateTexture();
-                    frames.Add(Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100, 0, SpriteMeshType.FullRect));
-                }
-                allimg.Add(img);
-                delays.Add(delay = img.Delay / 1000f);
+                frames.Add(img.CreateTexture());
+                delays.Add(img.Delay / 1000f);
                 img = decoder.NextImage();
             }
-            if (framesDebugMethod) frames = ImagesToFrames(allimg);
-            foreach (var frame in frames)
-                animation.AddSprite(frame);
+        }
 
-            animation.mode = ParticleSystemAnimationMode.Sprites;
-            ParticleSystem.MinMaxCurve framer = animation.frameOverTime;
-            
-            framer.curve = new AnimationCurve();
-            float cumulativeDelay = 0f;
-            for (int i = 0; i < frames.Count; i++)
-            {
-                framer.curve.AddKey(cumulativeDelay, i);
-                cumulativeDelay += delays[i];
-            }
-            
-            animation.frameOverTime = framer;
-        }*/
+        ParticleSystem particles = HopeUtils
+            .CreateParticleSystem(name, textures: frames.ToArray())
+            .WithDelays(delays.ToArray());
 
-        prefab = new GameObject(name, typeof(SpriteRenderer));
+        prefab = particles?.gameObject ?? new GameObject(name, typeof(RectTransform), typeof(ParticleSystem));
+        particles ??= prefab.GetComponent<ParticleSystem>();
+
         if (VFXMod.parent) prefab.transform.SetParent(VFXMod.parent);
         else GameObject.DontDestroyOnLoad(prefab);
-        prefab.SetLayerRecursively(8);
-        prefab.GetComponent<SpriteRenderer>().sortingLayerID = -2147482037;
-        var gifAnimator = prefab.AddComponent<GIFAnimator>();
-        if (gifAnimator == null) 
-            return false;
 
-        gifAnimator.frames = new Sprite[0];
-        gifAnimator.originalID = prefab.GetInstanceID();
-        gifAnimator.loops = loops;
-        gifAnimator.destroyOnEnd = destroyOnEnd;
+        var fadeOut = particles.colorOverLifetime;
+        fadeOut.enabled = false;
 
-        using (var decoder = new Utils.mgGIF.Decoder(data))
-        {
-            List<Sprite> frames = new();
-            List<float> delays = new();
-            float delay = 1 / 24;
-            var img = decoder.NextImage();
-            var allimg = new List<Utils.mgGIF.Image>();
-
-            bool framesDebugMethod = false;
-            while (img != null)
-            {
-                if (!framesDebugMethod)
-                {
-                    Texture2D texture = img.CreateTexture();
-                    frames.Add(Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100, 0, SpriteMeshType.FullRect));
-                }
-                allimg.Add(img);
-                delays.Add(delay = img.Delay / 1000f);
-                img = decoder.NextImage();
-            }
-            if (framesDebugMethod) frames = ImagesToFrames(allimg);
-            gifAnimator.frames = frames.ToArray();
-            gifAnimator.delays = delays.ToArray();
-        }
-
-
-        if (gifAnimator.frames.Length == 0)
-        {
-            Debug.LogError($"[VFX Tools] {path} cannot be read!");
-            prefab.Destroy();
-            return false;
-        }
-        gifAnimator.enabled = true;
-
+        MainModule main = particles.main;
+        main.stopAction = destroyOnEnd ? ParticleSystemStopAction.Destroy : ParticleSystemStopAction.Disable;
 
         Debug.LogWarning($"[VFX Tools] Created prefab: [{name}] with ID {prefab.GetInstanceID()}!");
         return true;
@@ -220,25 +173,55 @@ public partial class GIFLoader
 
         Debug.LogError("GIF from sprites:");
 
-        prefab = new GameObject(name, typeof(SpriteRenderer));
+        ParticleSystem particles;
+        if (sprites.All(s => s.texture == sprites[0].texture))
+        {
+            Debug.Log("creating particle system from one txture: " + sprites[0].texture);
+            particles = sprites[0].texture.ToParticleSystem(name, sprites);
+        }
+
+        else
+        {
+
+            Debug.Log("creating particle system from mulyiple txture: " + sprites.Select(t => t.texture).Distinct().Join()); 
+            particles = HopeUtils.CreateParticleSystem(name, sprites: sprites);
+        }
+            
+
+        prefab = particles?.gameObject ?? new GameObject(name, typeof(RectTransform), typeof(ParticleSystem));
+        particles ??= prefab.GetComponent<ParticleSystem>();
+
         if (VFXMod.parent) prefab.transform.SetParent(VFXMod.parent);
         else GameObject.DontDestroyOnLoad(prefab);
-        prefab.SetLayerRecursively(8);
-        prefab.GetComponent<SpriteRenderer>().sortingLayerID = -2147482037;
-        var gifAnimator = prefab.AddComponent<GIFAnimator>();
-        gifAnimator.frames = new Sprite[0];
-        gifAnimator.originalID = prefab.GetInstanceID();
-        gifAnimator.loops = loops;
-        gifAnimator.destroyOnEnd = destroyOnEnd;
 
-        gifAnimator.frames = sprites;
-        gifAnimator.delays = sprites.Select(_ => delaySeconds).ToArray();
+        var fadeOut = particles.colorOverLifetime;
+        fadeOut.enabled = false;
 
-        gifAnimator.enabled = true;
+        MainModule main = particles.main;
+        main.duration = delaySeconds * sprites.Length;
+        main.startLifetime = main.duration;
+        main.stopAction = destroyOnEnd ? ParticleSystemStopAction.Destroy : ParticleSystemStopAction.Disable;
+        main.playOnAwake = true;
 
-        /*prefab = new GameObject(name, typeof(RectTransform), typeof(ParticleSystem));
-        Debug.LogWarning("IS IT OKAY?");*/
+        TextureSheetAnimationModule animation = particles.textureSheetAnimation;
+        animation.enabled = true;
+        animation.startFrame = 0;
 
+        // NOTE: This can be replaced with FPS instead of timer curve
+        animation.timeMode = ParticleSystemAnimationTimeMode.Lifetime;
+        MinMaxCurve timer = animation.frameOverTime;
+        timer.curveMultiplier = 1;
+        timer.curve = new AnimationCurve();
+
+        // Both time and value are stored as percentages (between 0 and 1)
+        float cumulativeDelay = 0f;
+        for (int i = 0; i < sprites.Length; i++) // delays.Length
+        {
+            timer.curve.AddKey(cumulativeDelay, i * 1f / sprites.Length);
+            cumulativeDelay += 1f / sprites.Length;
+        }
+        // IMPORTANT: Need to reassign the timer
+        animation.frameOverTime = timer;
 
         Debug.LogWarning($"[VFX Tools] Created prefab: [{name}] with ID {prefab.GetInstanceID()}!");
         return true;

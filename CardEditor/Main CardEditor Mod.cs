@@ -16,6 +16,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.SceneManagement;
+using UnityEngine.U2D;
 using UnityEngine.UI;
 using UnityExplorer.ObjectExplorer;
 using UnityExplorer.UI;
@@ -52,7 +53,80 @@ namespace CardEditor
             base.Load();
             //Resources.FindObjectsOfTypeAll<Sprite>().Update(SpriteHandler.ExportSprite);
 
-            foreach (var battle in AddressableLoader.GetGroup<BattleData>(nameof(BattleData)))
+            string atlases = """
+                BackgroundFrostAtlas
+                BackgroundIceAtlas
+                BackgroundSnowAtlas
+                CardAtlas
+                CardBossAtlas
+                CardClunkerAtlas
+                CardCompanionAtlas
+                CardEnemyAtlas
+                CardItemAtlas
+                CardLeaderAtlas
+                CardSummonAtlas
+                HandOverlayAtlas
+                JournalPageAtlas
+                TownAtlas
+                TownBackgroundAtlasBackgroundFrostAtlas
+                BackgroundIceAtlas
+                BackgroundSnowAtlas
+                CardAtlas
+                CardBossAtlas
+                CardClunkerAtlas
+                CardCompanionAtlas
+                CardEnemyAtlas
+                CardItemAtlas
+                CardLeaderAtlas
+                CardSummonAtlas
+                HandOverlayAtlas
+                JournalPageAtlas
+                TownAtlas
+                TownBackgroundAtlas
+                """;
+            string[] lines = atlases.Split(["\r\n"], StringSplitOptions.None);
+
+            foreach (var key in lines)
+            {
+                SpriteAtlasManager.atlasRegistered += s => Debug.LogWarning($"[{Title}] ATLAS REGISTERED: {s.name}");
+                SpriteAtlasManager.atlasRequested += (s, onGet) => Debug.LogWarning($"[{Title}] ATLAS REQUESTED: {s}");
+                var atlas = GetAsset<SpriteAtlas>(key);
+                if (!atlas) continue;
+
+                Sprite[] sprites = new Sprite[atlas.spriteCount];
+                atlas.GetSprites(sprites);
+                Debug.LogWarning($"{key}: {sprites.All(s => s.texture == sprites[0].texture)}");
+                Debug.Log("\n" + sprites.Join(s => $">> {s.name}", delimiter:"\n"));
+            }
+
+            /*foreach (var type in Resources.FindObjectsOfTypeAll<CharacterType>())
+            {
+                foreach (var prefabG in type.prefabs)
+                {
+                    if (!prefabG.name.StartsWith("Weapon"))
+                        continue;
+
+                    prefabG.collection.weightedList.Do(c => {
+
+                        var sprite = c.value.GetComponent<Image>().sprite;
+                        //SpriteHandler.ExportSprite(sprite);
+                        });
+                }
+            }
+            foreach (var sprite in Resources.FindObjectsOfTypeAll<Sprite>())
+            {
+                if (sprite && sprite.pivot != 0.5f * sprite.rect.size)
+                {
+                    Debug.LogWarning($"Pivot of [{sprite.name}]: {sprite.pivot}"); 
+                    SpriteHandler.ExportSprite(sprite, $"Pivoted/{sprite.name}");
+                    SpriteHandler.ExportSprite(sprite, $"Pivotless/{sprite.name}_presize");
+                }
+                    
+                
+            }*/
+
+
+            /*foreach (var battle in AddressableLoader.GetGroup<BattleData>(nameof(BattleData)))
             {
                 SpriteHandler.ExportSprite(battle.sprite, $"battle_{battle.name}");
             }
@@ -79,7 +153,7 @@ namespace CardEditor
             new Dictionary<string, object>
             {
                 ["key"] = "value"
-            };
+            };*/
 
 
             /*

@@ -25,6 +25,8 @@ namespace WildfrostHopeMod.VFX
         public event Action<int> OnCompletedLoop;
         public event Action OnEnd;
 
+        AnimationCurve frameOverTime;
+
         void Awake()
         {
             renderer = GetComponent<SpriteRenderer>();
