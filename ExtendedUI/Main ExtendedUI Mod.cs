@@ -53,24 +53,35 @@ namespace ExtendedUI
             """;
         public override TMP_SpriteAsset SpriteAsset => base.SpriteAsset;
         public static GameObject behaviour;
+        public static bool IsLocal => instance?.ModDirectory.Replace('/', '\\').Contains(Application.streamingAssetsPath.Replace('/', '\\')) ?? false;
 
         public override void Load()
         {
-            if (true)
+            if (IsLocal)
             {
-                Entity entity = null;
-                entity.GetAllAllies().DoIf(a => a?.traits == null, 
-                    a => Debug.LogWarning((a, a?.traits?.Where(t => t != null && t.data != null).Join())));
+                var container = UIFactory.CreateCardGrid(null);
+                var cardController = container.gameObject.GetOrAdd<CardControllerSelectCard>();
+                cardController.owner = References.Player;
+                cardController.unHoverEvent = new UnityEventEntity();
+                cardController.hoverEvent = new UnityEventEntity();
+                cardController.pressEvent = new UnityEventEntity();
+                cardController.pressEvent.AddListener(e => Debug.LogWarning("OW!" + e));
+                container.AssignController(cardController);
+                new Routine(Pop());
+
+                IEnumerator Pop()
+                {
+                    yield return container.Populate(
+                        AddressableLoader.GetGroup<CardData>(nameof(CardData))
+                        .Where(c => c.mainSprite?.name != "Nothing" && !c.scriptableImagePrefab)
+                        .RandomItems(5));
+                    container.TweenChildPositions();
+                }
             }
 
             base.Load();
-            new List<Entity>().Count(a => { Debug.Log()})
-            behaviour = new GameObject(Title);
-            GameObject.DontDestroyOnLoad(behaviour);
-            behaviour.hideFlags = HideFlags.HideInHierarchy | HideFlags.DontUnloadUnusedAsset |
-                                  HideFlags.HideInInspector | HideFlags.NotEditable;
 
-            var e = behaviour.AddComponent<ExtendedUIModBehaviour>();
+            GameObject.DontDestroyOnLoad(behaviour = new GameObject(Title, typeof(ExtendedUIModBehaviour)));
             Events.OnSceneChanged += TribeFlagsGrid.OnSceneChanged;
             Events.OnSceneChanged += PetGrid.OnSceneChanged;
         }

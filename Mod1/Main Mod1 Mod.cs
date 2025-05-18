@@ -683,7 +683,7 @@ public class MyMod : WildfrostMod
 
 
         LocalizationHelper.GetCollection("Cards", SystemLanguage.English).SetString("owo", "|Body Text!");
-        HelpPanelSystem.Show(LocalizationHelper.GetCollection("Cards", SystemLanguage.English).GetString("owo"));
+        //HelpPanelSystem.Show(LocalizationHelper.GetCollection("Cards", SystemLanguage.English).GetString("owo"));
 
 
         /*Debug.LogWarning(typeof(WildfrostMod));
@@ -695,7 +695,7 @@ public class MyMod : WildfrostMod
             .Join(delimiter:"\n"));*/
 
         Debug.LogError("MY MOD " + Assembly.GetExecutingAssembly().GetType().AssemblyQualifiedName);
-        Events.OnCardDataCreated += c => c.traits.Add(new(Get<TraitData>("Noomlin"), 1));
+        //Events.OnCardDataCreated += c => c.traits.Add(new(Get<TraitData>("Noomlin"), 1));
 
         /*HarmonyInstance.PatchAll(typeof())
 
@@ -707,13 +707,35 @@ public class MyMod : WildfrostMod
 
         Debug.LogError(Addressables.LoadAssetAsync<UnityEngine.Object>("my sprite").WaitForCompletion());
 */
-        if (assets.Count <= 0)
-            CreateModAssets();
+        assets.Clear();
+        CreateModAssets();
         base.Load();
 
+        Debug.LogError("owo");
+
+        Debug.Log("OWOWOWOWOWOWOOW");
+        foreach (var k in AddressableLoader.GetGroup<KeywordData>(nameof(KeywordData)))
+        {
+            Debug.Log((k.name, k.show, k.showName, k.showIcon));
+        }
+        
 
 
+        Events.OnEntityDataUpdated += target =>
+        {
+            if (target.display as Card && FrostEyeSystem.toRemove.TryGetValue(target.display as Card, out var eyes))
+            {
+                foreach (var eye in eyes)
+                {
+                    foreach (var image in eye.GetComponentsInChildren<Image>())
+                    {
+                        image.color = Color.red;
+                    }
+                }
+            }
+        };
 
+        Debug.LogWarning("IWuu");
         behaviour = new GameObject(Title);
         GameObject.DontDestroyOnLoad(behaviour);
 
@@ -833,6 +855,9 @@ public class MyMod : WildfrostMod
 
     public class StatusEffectFlipDownHoverable : StatusEffectInstant
     {
+        
+        
+        
         public override IEnumerator Process()
         {
             target.OnDisable();
@@ -915,24 +940,56 @@ public class MyMod : WildfrostMod
     }
 
 
-    public class StatusEffectCombineAllies : StatusEffectInstant
+    public class StatusEffectInstantFillBoard : StatusEffectInstant
     {
-        /// <summary>
-        /// Leave null to combine into the owner
-        /// </summary>
-        public CardData combineInto;
+        public CardData Gnome => instance.Get<CardData>("NakedGnomeFriendly");
+        [SerializeField]
+        public CardData[] withCards => Enumerable.Range(0,12).Select(n => Gnome).ToArray();
+
+        public readonly List<CardData> pool = new List<CardData>();
 
         public override IEnumerator Process()
         {
-            Entity resultEntity;
-            if (!combineInto)
-                resultEntity = target;
-            else
-                resultEntity = CardManager.Get(combineInto, target.display.hover.controller, target.owner, false, target.owner == Battle.instance.player).entity;
+            List<CardContainer> rows = References.Battle.GetRows(target.owner).Concat(References.Battle.GetRows(Battle.GetOpponent(target.owner))).ToList();
+            List<CardSlot> list = new List<CardSlot>();
+            foreach (CardContainer item in rows)
+            {
+                if (item is CardSlotLane cardSlotLane)
+                {
+                    list.AddRange(cardSlotLane.slots.Where((CardSlot slot) => slot.Empty));
+                }
+            }
 
-            //ActionQueue.Stack(new ActionCombine([.. target.GetAllAllies(), resultEntity]), true);
-            yield return CombineSystem.Combine(target, resultEntity);
+            int i = 0;
+            foreach (CardSlot slot2 in list)
+            {
+                CardData data = Pull().Clone();
+                Card card = CardManager.Get(data, References.Battle.playerCardController, target.owner, inPlay: true, target.owner.team == References.Player.team);
+                
+                yield return card.UpdateData();
+
+                card.SetName($"Gnome {i}");
+                card.entity.name = $"Gnome {i}";
+                card.entity.data.name = $"Gnome {i}";
+
+                target.owner.reserveContainer.Add(card.entity);
+                target.owner.reserveContainer.SetChildPosition(card.entity);
+                ActionQueue.Stack(new ActionMove(card.entity, slot2), fixedPosition: true);
+                ActionQueue.Stack(new ActionRunEnableEvent(card.entity), fixedPosition: true);
+                i++;
+            }
+
             yield return base.Process();
+        }
+
+        public CardData Pull()
+        {
+            if (pool.Count <= 0)
+            {
+                pool.AddRange(withCards);
+            }
+
+            return pool.TakeRandom();
         }
     }
 
@@ -951,12 +1008,98 @@ public class MyMod : WildfrostMod
         }
     }
     #endregion
+    internal class TargetModeAllInFront : TargetMode
+    {
+        public override Entity[] GetPotentialTargets(Entity entity, Entity target, CardContainer targetContainer)
+        {
+            Debug.LogError("pote");
+            HashSet<Entity> targets = new HashSet<Entity>();
+            if (target)
+            {
+                foreach (CardContainer cardContainer in target.actualContainers.ToArray())
+                {
+                    if (cardContainer is CardSlot cardSlot && cardContainer.Group is CardSlotLane lane)
+                    {
+                        targets.AddRange(References.Battle.GetOppositeRow(lane)?.ToArray() ?? []);
+                        for (int index = lane.slots.IndexOf(cardSlot); index >= 0; --index)
+                        {
+                            Entity otherEntity = lane.slots[index].GetTop();
+                            if (otherEntity == null)
+                                continue;
+                            else
+                                targets.Add(otherEntity);
+                        }
+                    }
+                }
+            }
+            else if (targetContainer && targetContainer is CardSlot cardSlot2)
+            {
+                if (cardSlot2.Group is CardSlotLane lane)
+                {
+                    targets.AddRange(References.Battle.GetOppositeRow(lane)?.ToArray() ?? []);
+                    for (int index = lane.slots.IndexOf(cardSlot2); index >= 0; --index)
+                    {
+                        Entity otherEntity = lane.slots[index].GetTop();
+                        if (otherEntity == null)
+                            continue;
+                        else if (otherEntity == entity)
+                            continue;
+                        else
+                            targets.Add(otherEntity);
+                    }
+                }
+            }
+            else
+            {
+                foreach (CardContainer cardContainer in entity.actualContainers.ToArray())
+                {
+                    if (cardContainer is CardSlot cardSlot && cardContainer.Group is CardSlotLane lane)
+                    {
+                        targets.AddRange(References.Battle.GetOppositeRow(lane)?.ToArray() ?? []);
+                        for (int index = lane.slots.IndexOf(cardSlot) - 1; index >= 0; --index)
+                        {
+                            Entity otherEntity = lane.slots[index].GetTop();
+                            if (otherEntity == null)
+                                continue;
+                            else if (otherEntity == entity)
+                                break;
+                            else
+                                targets.Add(otherEntity);
+                        }
+                    }
+                }
+            }
+
+            Debug.LogError((entity, target, targetContainer));
+            Debug.LogError(targets.Join());
+            return targets.Count <= 0 ? null : targets.ToArray();
+        }
+
+        public override Entity[] GetTargets(Entity entity, Entity target, CardContainer targetContainer)
+        {
+            Debug.LogError(1);
+            Debug.LogError((entity, target, targetContainer));
+            return GetPotentialTargets(entity, target, targetContainer);
+        }
+
+        public override Entity[] GetSubsequentTargets(Entity entity, Entity target, CardContainer targetContainer)
+        {
+
+            Debug.LogError(2);
+            Debug.LogError((entity, target, targetContainer));
+            return GetPotentialTargets(entity, target, targetContainer);
+        }
+    }
     private void CreateModAssets(bool forRelease = true)
     {
         assets.AddRange([
             new StatusEffectDataBuilder(this)
+        .Create<StatusEffectInstantFillBoard>("Fill")
+        .WithText("Fill"),
+            
+            new StatusEffectDataBuilder(this)
         .Create<StatusEffectChangeTargetMode>("Hit Column")
-        .WithText("Hit enemies in column")
+        .WithText("Hit cards in front")
         .WithStackable(true)
         .WithCanBeBoosted(false)
         .WithOffensive(false)           // As an attack effect, this is treated as a buff
@@ -964,7 +1107,7 @@ public class MyMod : WildfrostMod
         .WithDoesDamage(false)          // Its entity cannot kill with this effect, eg for Bling Charm
         .SubscribeToAfterAllBuildEvent<StatusEffectChangeTargetMode>(data =>
         {
-                data.targetMode = new Scriptable<TargetModeColumn>();
+                data.targetMode = new Scriptable<TargetModeAllInFront>();
         }),
 
 

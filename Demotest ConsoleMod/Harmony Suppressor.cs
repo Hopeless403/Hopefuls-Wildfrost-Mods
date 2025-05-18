@@ -18,6 +18,9 @@ using UnityEngine.UI;
 using static UnityEngine.UI.Button;
 using UnityExplorer.UI;
 using UnityExplorer;
+using UnityEngine.AddressableAssets;
+using UnityEngine.Localization.Settings;
+using UnityEngine.Localization.Tables;
 
 namespace WildfrostHopeMod.HarmonySuppressor;
 
@@ -34,7 +37,37 @@ public class HarmonySuppressorPlugin : BaseUnityPlugin
         Events.OnPreCampaignPopulate += SpecialEventsSystem.PreCampaignPopulate;
         Debug.LogWarning(Resources.FindObjectsOfTypeAll<CampaignNodeTypeCurseItems>().Any());
         Events.OnGameStart += () => Debug.LogWarning(Resources.FindObjectsOfTypeAll<CampaignNodeTypeCurseItems>().Any());
+        Events.OnGameStart += OnGameStart;
     }
+
+    static void OnGameStart()
+    {
+        StringBuilder builder = new StringBuilder();
+        foreach (var locale in LocalizationSettings.AvailableLocales.Locales)
+        {
+            var localeLabel = "Locale-" + locale.Formatter;
+            var tables = Addressables.LoadResourceLocationsAsync(localeLabel, typeof(StringTable)).WaitForCompletion();
+            foreach (var tableLocation in tables)
+            {
+                var table = Addressables.LoadAssetAsync<StringTable>(tableLocation.PrimaryKey).WaitForCompletion();
+                //if (table.name.Contains("Card Text"))
+                    foreach (var entry in table.SharedData.Entries)
+                    {
+                        if (table.GetEntry(entry.Key) == null) continue;
+                        //Debug.LogWarning((locale, entry.Key));
+                        Debug.Log(table.GetEntry(entry.Key).GetLocalizedString());
+                        builder.AppendLine(table.GetEntry(entry.Key).GetLocalizedString());
+
+                    }
+            }
+            //break;
+        }
+
+
+
+        GUIUtility.systemCopyBuffer = builder.ToString();
+    }
+
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Backslash))

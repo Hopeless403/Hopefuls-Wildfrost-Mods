@@ -10,6 +10,7 @@ using Deadpan.Enums.Engine.Components.Modding;
 using UnityEngine.AddressableAssets;
 using NaughtyAttributes;
 using System.Collections;
+using UnityExplorer;
 
 namespace WildfrostHopeMod.CommandsConsole
 {
@@ -65,14 +66,18 @@ namespace WildfrostHopeMod.CommandsConsole
                         {
                             Debug.LogError("[AConsole] TRYING TO DECOMPILE " + actualType.FullName);
 
+                            var settings = new ICSharpCode.Decompiler.DecompilerSettings(ICSharpCode.Decompiler.CSharp.LanguageVersion.Latest);
                             var decompiler = new ICSharpCode.Decompiler.CSharp.CSharpDecompiler(
                                 fileName: actualType.Assembly.Location,
                                 assemblyResolver: assemblyResolver,
-                                settings: new ICSharpCode.Decompiler.DecompilerSettings(ICSharpCode.Decompiler.CSharp.LanguageVersion.Latest)
+                                settings: settings
                                 );
                             builder.AppendLine("");
 
-                            builder.AppendLine(decompiler.DecompileTypeAsString(new(actualType.FullName)));
+                            var syntaxTree = decompiler.DecompileType(new(actualType.FullName));
+                            var typeNode = syntaxTree.Descendants.FirstOrDefault(node => node is ICSharpCode.Decompiler.CSharp.Syntax.TypeDeclaration type && type.Name == actualType.Name);
+                            
+                            builder.AppendLine(typeNode.ToString(settings.CSharpFormattingOptions));
                             actualType = actualType.BaseType;
 
                             if (!recursive) break;
@@ -81,6 +86,7 @@ namespace WildfrostHopeMod.CommandsConsole
                     catch { }
                     return builder.AppendLine("#endregion");
                 }
+
                 public static string Print<Y>(Y obj, int tabDepth = 0, bool ignoreFirstTab = false)
                 {
                     Type objType = obj.GetType();
@@ -126,9 +132,30 @@ namespace WildfrostHopeMod.CommandsConsole
                         return builder.Append($"{obj}F").ToString();
                     else if (objType == typeof(long))
                         return builder.Append($"{obj}L").ToString();
+
                     else if (objType.IsEnum)
                     {
-                        return builder.Append($"{objType.FullName.Replace('+', '.')}.{obj}").ToString();
+                        var a = StatusEffectApplyX.ApplyToFlags.Self 
+                            | StatusEffectApplyX.ApplyToFlags.Hand 
+                            | StatusEffectApplyX.ApplyToFlags.Allies 
+                            | StatusEffectApplyX.ApplyToFlags.Enemies;
+                        string objTypeName = objType.FullName.Replace('+', '.');
+                        if (!int.TryParse(obj.ToString(), out int value))
+                        {
+                            // All flags of the enum are accounted for
+                            var flags = obj.ToString().Split(',')
+                                .Select(flag => $"{objTypeName}.{flag.Trim()}");
+
+                            string delim = $"\n{new string('\t', tabDepth+1)}| ";
+                            return builder.Append(flags.Join(delimiter: delim)).ToString();
+                        }
+                        else if (value < 0)
+                            return builder.Append($"({objTypeName})~{~value}"
+                                + (value == ~0 ? " /* Use all flags */" : "")
+                                ).ToString();
+                        else
+                            return builder.Append($"({objTypeName}){value}").ToString();
+                        
                     }
 
                     else if (obj is LocalizedString locStr)
@@ -276,6 +303,7 @@ namespace WildfrostHopeMod.CommandsConsole
                     {
                         return builder.Append($"new Color({color.r}f, {color.g}f, {color.b}f, {color.a}f)").ToString();
                     }
+                    // Deal with structs
                     else if (obj is ValueType valueType && objType.IsValueType && !objType.IsPrimitive && (objType.Namespace == null || !objType.Namespace.StartsWith("System.")))
                     {
                         //AccessTools.IsStruct(objType);

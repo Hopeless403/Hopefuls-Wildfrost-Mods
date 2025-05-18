@@ -22,7 +22,10 @@ namespace WildfrostHopeMod.CommandsConsole
                 Console.commands.RemoveWhere(c => c.id == this.id);
             }
         }
-        
+        public interface ICommandOverride
+        {
+        }
+
         public class CommandCustomDestroy : Command
         {
             public override string id => "destroy";
@@ -239,7 +242,9 @@ namespace WildfrostHopeMod.CommandsConsole
             public override IEnumerator GetArgOptions(string currentArgs)
             {
                 IEnumerable<WildfrostMod> source = Bootstrap.Mods.Where(mod => !mod.HasLoaded);
-                predictedArgs = source.Select(mod => $"{mod.GUID} \t// {mod.Title}").ToArray();
+                predictedArgs = source.Select(mod => $"{mod.GUID} \t// {mod.Title}")
+                    .Where(arg => arg.ToLower().Contains(currentArgs.ToLower()))
+                    .ToArray();
                 yield break;
             }
         }
@@ -261,30 +266,14 @@ namespace WildfrostHopeMod.CommandsConsole
             public override IEnumerator GetArgOptions(string currentArgs)
             {
                 IEnumerable<WildfrostMod> source = Bootstrap.Mods.Where(mod => mod.HasLoaded);
-                predictedArgs = source.Select(mod => $"{mod.GUID} \t// {mod.Title}").ToArray();
+                predictedArgs = source.Select(mod => $"{mod.GUID} \t// {mod.Title}")
+                    .Where(arg => arg.ToLower().Contains(currentArgs.ToLower()))
+                    .ToArray();
                 yield break;
             }
         }
-        private class CommandSetSaveProfile : Command
+        private class CommandSetSaveProfile : Console.CommandSetSaveProfile, ICommandOverride
         {
-            public override string id => "save profile";
-
-            public override string format => "save profile <name>";
-
-            public override string desc => "switch save profile";
-
-            public override void Run(string args)
-            {
-                if (Campaign.instance == null)
-                {
-                    SaveSystem.SetProfile(args);
-                }
-                else
-                {
-                    Fail("Cannot switch save profile here!");
-                }
-            }
-
             public override IEnumerator GetArgOptions(string currentArgs)
             {
                 string directory = Path.Combine(Application.persistentDataPath, SaveSystem.profileFolder);
@@ -297,6 +286,18 @@ namespace WildfrostHopeMod.CommandsConsole
                 if (index >= 0)
                     predictedArgs[index] = $"{SaveSystem.Profile} \t// Current profile";
                 yield break;
+            }
+        }
+        private class CommandNextBattle : Console.CommandNextBattle, ICommandOverride
+        {
+            public override IEnumerator Routine(string args)
+            {
+                yield return base.Routine(args);
+                if (References.Map)
+                {
+                    foreach (MapNode node in References.Map.nodes)
+                        node.Refresh(); 
+                }
             }
         }
 

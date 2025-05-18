@@ -229,7 +229,8 @@ namespace WildfrostHopeMod.CommandsConsole
             public override IEnumerator GetArgOptions(string currentArgs)
             {
                 //var source = SaveSystem.LoadProgressData<List<string>>("petHutUnlocks", null);
-                var source = SaveSystem.LoadProgressData<List<string>>("unlocked", new List<string>());
+                var source = SaveSystem.LoadProgressData<List<string>>("unlocked", new List<string>())
+                    .Where(c => c.ToLower().Contains(currentArgs.ToLower())); ;
 
 
                 //var source = GetActiveChallenges().Where(c => c.listener?.checkType == ChallengeListener.CheckType.MidRun && c.name.ToLower().Contains(currentArgs.ToLower()));

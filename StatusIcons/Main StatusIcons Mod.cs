@@ -1,4 +1,5 @@
 ﻿using Deadpan.Enums.Engine.Components.Modding;
+using Modding = Deadpan.Enums.Engine.Components.Modding;
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
@@ -149,7 +150,7 @@ namespace StatusIcons
                     //.WithTextboxSprite(ImagePath("Icons/amber.png"))      // This version is slightly slower, but lets you use other (lower-res) textbox sprites
                     
                     .WithApplyVFX(VFXMod.instance?.ImagePath("../icon.gif"))         // Replace with your own GIF or APNG filepath
-                    .WithApplySFX(VFXMod.instance?.ImagePath("42 - Eyecatch 2.mp3")) // Replace with your own MP3/WAV/OGG etc filepath
+                    .WithApplySFX(Modding.Extensions.GetModFromGuid("hope.wildfrost.FMODTEST").GetEventReference("SFX/Challenge Clear!"), 0.05f) // Replace with your own MP3/WAV/OGG etc filepath
                     .WithKeywords(iconKeywordOrNull:"amberkeyword") // the "icon keyword" will be adjusted to show the icon's textbox sprite
                     ,
 
@@ -188,7 +189,6 @@ namespace StatusIcons
                     //.WithTextboxSprite(ImagePath("Icons/amber.png"))      // This version is slightly slower, but lets you use other (lower-res) textbox sprites
                     
                     .WithApplyVFX(VFXMod.instance?.ImagePath("../icon.gif"))         // Replace with your own GIF or APNG filepath
-                    .WithApplySFX(VFXMod.instance?.ImagePath("42 - Eyecatch 2.mp3")) // Replace with your own MP3/WAV/OGG etc filepath
                     .WithKeywords(iconKeywordOrNull:"amber2") // the "icon keyword" will be adjusted to show the icon's textbox sprite
                     ,
 
@@ -232,7 +232,6 @@ namespace StatusIcons
                     //.WithTextboxSprite()                                // This version reuses the main sprite for the textbox
                     .WithTextboxSprite(ImagePath("Icons/crown.png"))      // This version is slightly slower, but lets you use other textbox sprites
                     .WithApplyVFX(VFXMod.instance?.ImagePath("../icon.gif"))
-                    .WithApplySFX(VFXMod.instance?.ImagePath("42 - Eyecatch 2.mp3"))
                     .WithKeywords(iconKeywordOrNull: "the random card keyword")
                     ,
 

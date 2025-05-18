@@ -71,7 +71,7 @@ namespace WildfrostHopeMod.VFX
             return this;
         }
 
-        /*/// <summary>
+        /// <summary>
         /// Plays a sound when the status icon is applied, from an event reference of some FMOD bank. 
         /// You may want to use FMODUnity.RuntimeManager.PathToEventReference()
         /// </summary>
@@ -80,7 +80,7 @@ namespace WildfrostHopeMod.VFX
         public StatusIconBuilder WithApplySFX(FMODUnity.EventReference eventRef)
         {
             return this.WithApplySFX(eventRef, 0.05f);
-        }*/
+        }
 
         /// <summary>
         /// Plays a sound when the status icon is applied, from an event reference of some FMOD bank. 

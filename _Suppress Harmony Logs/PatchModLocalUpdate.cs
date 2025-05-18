@@ -87,6 +87,7 @@ public class PatchModLocalUpdate
                 {
                     //throw new Exception();
                     modDependency = Assembly.Load(File.ReadAllBytes(dllPath));
+                    Debug.LogWarning("Successfully loaded new assembly");
                 }
                 catch
                 {
@@ -190,7 +191,7 @@ public class PatchModLocalUpdate
     [HarmonyPatch(typeof(WildfrostMod), nameof(WildfrostMod.ModLoad))]
     public static void Postfix(WildfrostMod __instance, System.Diagnostics.Stopwatch __state)
     {
-        if (HarmonySuppressorPlugin.all && __instance.GetType().Name == "Stabilizer")
+        /*if (HarmonySuppressorPlugin.all && __instance.GetType().Name == "Stabilizer")
         {
             __instance.HarmonyInstance.GetPatchedMethods().DoIf(
                 m => m.Name == nameof(Assembly.Location),
@@ -198,7 +199,7 @@ public class PatchModLocalUpdate
             );
             HarmonySuppressorPlugin.harmony.UnpatchSelf();
             HarmonySuppressorPlugin.harmony.PatchAll();
-        }
+        }*/
         __state.Stop();
         if (__instance != null)
             Debug.LogError($"Mod load [{__instance.Title}] took {__state.ElapsedMilliseconds} ms");

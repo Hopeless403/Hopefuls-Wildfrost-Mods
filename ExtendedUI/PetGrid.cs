@@ -71,12 +71,12 @@ namespace ExtendedUI
             var rect = _gameObject.AddComponent<RectTransform>();
             rect.sizeDelta = new Vector2(7, 2);
 
-            /*var cardController = _gameObject.AddComponent<CardControllerSelectCard>();
+            var cardController = _gameObject.AddComponent<CardControllerSelectCard>();
             cardController.owner = References.Player;
             cardController.unHoverEvent = new UnityEventEntity();
             cardController.hoverEvent = new UnityEventEntity();
             cardController.pressEvent = new UnityEventEntity();
-            cardController.pressEvent.AddListener(ChooseCard);*/
+            //cardController.pressEvent.AddListener(ChooseCard);
 
             var cardContainer = UIFactory.CreateCardGrid(_objectGroup.transform, rect);
 

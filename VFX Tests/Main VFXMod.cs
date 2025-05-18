@@ -23,6 +23,7 @@ using UnityEngine.UIElements;
 using HarmonyLib.Public.Patching;
 using System.Reflection;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace WildfrostHopeMod.VFX
 {
@@ -35,7 +36,7 @@ namespace WildfrostHopeMod.VFX
         {
             instance = this;
             HarmonyInstance.PatchAll(typeof(PatchHarmony));
-
+            HarmonyInstance.PatchAll(typeof(PatchGiveUp));
 
             iconTemplate = Addressables.LoadAssetAsync<GameObject>("Card Icons/SnowIcon.prefab").WaitForCompletion().InstantiateKeepName();
             GameObject.DontDestroyOnLoad(iconTemplate);
@@ -67,16 +68,6 @@ namespace WildfrostHopeMod.VFX
         public static SpriteAtlas ShrekAtlas;
         public static Sprite[] ShrekSprites;
 
-        public static EventReference testReference = new FMODUnity.EventReference()
-        {
-            Guid = new FMOD.GUID()
-            {
-                Data1 = "hope.wildfrost.vfx".GetHashCode(),
-                Data2 = "other mod guid".GetHashCode(),
-                Data3 = "test".GetHashCode(),
-                Data4 = "sound name".GetHashCode()
-            }
-        };
         
         public override void Load()
         {
@@ -109,25 +100,7 @@ namespace WildfrostHopeMod.VFX
 
             base.Load();
 
-
-            //UpdateDisplayer();
-
-            /*FileInfo[] files = new DirectoryInfo(ImagePath("animations/dimension witch_special")).GetFiles();
-            Sprite[] sprites = files.Select(f => f.FullName.ToSpriteFull()).ToArray();
-            float[] delays = files.Select(f =>
-            {
-                string s_delay = Path.GetFileNameWithoutExtension(f.Name).Split(["delay-"], StringSplitOptions.None).Last();
-                if (!float.TryParse(s_delay.Replace("s", ""), NumberStyles.Any, CultureInfo.InvariantCulture, out float delay))
-                    delay = 0;
-                return delay;
-            }).ToArray();
-
-            GIFLoader.CreateParticleSystemFromSprites(sprites, delays, -1, out var prefab, "dimension witch_special");
-            Debug.Log((prefab, prefab?.scene));
-            VFX.prefabs[prefab.name] = prefab;
-            Debug.Log($"[VFX Tools] Loaded [{prefab}] from sprites");
-            prefab.RegisterAsApplyEffect("dimension witch_special");*/
-
+            this.LoadFMOD(audioDirectory: "audio");
         }
 
         public void OnEntityKilled(Entity entity, DeathType death)
@@ -255,7 +228,17 @@ namespace WildfrostHopeMod.VFX
                     shrekInst.transform.SetAsFirstSibling();
                     shrekInst.transform.SetLocalRotationY(0);
                     shrekInst.AddComponent<LayoutElement>();
-                    shrekInst.transform.localScale = 0.02f * Vector3.one;
+                    shrekInst.transform.localScale = Vector3.one;
+
+                    try
+                    {
+                        EventReference jingleRef = VFXMod.instance.GetEventReference("SFX/Challenge Clear!");
+                        SfxSystem.OneShot(jingleRef);
+                    }
+                    catch (EventNotFoundException ex)
+                    {
+                        Debug.LogWarning(ex);
+                    }
                 }
             }
             CoroutineManager.Start(playDelay(shrekObj));
@@ -264,6 +247,7 @@ namespace WildfrostHopeMod.VFX
 
         public override void Unload()
         {
+            this.UnloadFMOD(audioDirectory: "audio");
             base.Unload();
             Events.OnEntityKilled -= OnEntityKilled;
             Events.OnSceneLoaded -= PlayShrekMovieOnCreditsScene;

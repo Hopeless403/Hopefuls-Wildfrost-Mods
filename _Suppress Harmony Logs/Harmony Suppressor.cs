@@ -15,12 +15,24 @@ using System.Text;
 using System.Collections.Generic;
 using UnityEngine.EventSystems;
 using ICSharpCode.Decompiler.DebugInfo;
+using UnityExplorer;
+using UnityExplorer.UI;
+using UnityEngine.UI;
 
 namespace WildfrostHopeMod.HarmonySuppressor;
 [HarmonyPatch]
 [BepInPlugin("hope.wildfrost.harmony", "Harmony Suppressor", "1.1.0")]
-public class HarmonySuppressorPlugin : BaseUnityPlugin
+public partial class HarmonySuppressorPlugin : BaseUnityPlugin
 {
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(Directory), nameof(Directory.GetLastWriteTime))]
+    public static void IgnorePathErrors(ref string path)
+    {
+        if (path == "") path = Application.streamingAssetsPath;
+    }
+
+    
+
     [HarmonyPatch(typeof(ModHolder), nameof(ModHolder.UpdateInfo))]
     public static void Postfix(ModHolder __instance)
     {
@@ -241,7 +253,18 @@ public class HarmonySuppressorPlugin : BaseUnityPlugin
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Backslash))
+        {
             Bootstrap.Mods.FirstOrDefault(mod => mod.GUID == "kopie.wildfrost.unityexplorer")?.Load();
+            new Routine(Console.commands.Find(c => c.id == "inspect").Routine(""));
+            /*try
+            {
+                UnityExplorer.InspectorManager.Inspect(GameObject.FindObjectOfType<VfxStatusSystem>());
+                UIManager.ShowMenu = false;
+            }
+            catch { }*/
+        }
+            
+        
     }
     [HarmonyPatch(typeof(WildfrostMod.DebugLoggerTextWriter), nameof(WildfrostMod.DebugLoggerTextWriter.WriteLine))]
     public class PatchHarmony
@@ -250,19 +273,6 @@ public class HarmonySuppressorPlugin : BaseUnityPlugin
         static void Postfix() => HarmonyLib.Tools.Logger.ChannelFilter = HarmonyLib.Tools.Logger.LogChannel.Warn | HarmonyLib.Tools.Logger.LogChannel.Error;
     }
 
-    [HarmonyPatch(typeof(ModsSceneManager), nameof(ModsSceneManager.Start))]
-    public class PatchModSizes
-    {
-        public readonly string comment = "this has absolutely nothing to do with the mod kekw";
-        public static IEnumerator Postfix(IEnumerator __result, ModsSceneManager __instance)
-        {
-            Debug.LogWarning(UnityEngine.StackTraceUtility.ExtractStackTrace());
-            while (__result.MoveNext())
-                yield return __result.Current;
-            foreach (var transform in __instance.Content.transform.GetAllChildren())
-                transform.localScale = Vector3.one;
-        }
-    }
 
 }
 
@@ -308,7 +318,7 @@ public class PatchErrorLog
 //[HarmonyPatch(typeof(Bootstrap), nameof(Bootstrap.Update))]
 class UpdateActioner { static void Postfix() => Debug.LogWarning(Resources.FindObjectsOfTypeAll<GameUpdateDisplayer>().Any()); }
 
-//[HarmonyPatch(typeof(Bootstrap), nameof(Bootstrap.ModsSetup))]
+[HarmonyPatch(typeof(Bootstrap), nameof(Bootstrap.ModsSetup))]
 class PatchBootstrap : MonoBehaviour
 {
     static bool Prefix(Bootstrap __instance)
@@ -346,34 +356,3 @@ class PatchBootstrap : MonoBehaviour
         return false;
     }
 }
-
-[HarmonyPatch(typeof(BuildingDisplay), nameof(BuildingDisplay.Create))]
-class PatchBuildingDisplay : MonoBehaviour
-{
-    static void Prefix(BuildingDisplay __instance, GameObject prefab, Building building)
-    {
-        Debug.LogWarning("STARTING CREATE");
-        Debug.LogWarning((prefab, building));
-    }
-}
-[HarmonyPatch(typeof(Building), nameof(Building.CreateDisplay))]
-class PatchBuilding : MonoBehaviour
-{
-    static void Prefix(Building __instance, GameObject prefab)
-    {
-        Debug.LogWarning("STARTING CREATEDISPLAY");
-        Debug.LogWarning((prefab, __instance.gameObject, prefab == __instance.gameObject));
-        Debug.LogWarning((__instance.onSelect.GetPersistentTarget(0), __instance.gameObject, __instance.onSelect.GetPersistentTarget(0) == __instance.gameObject));
-        Debug.LogWarning((prefab, __instance.onSelect.GetPersistentTarget(0), prefab == __instance.onSelect.GetPersistentTarget(0)));
-    }
-}
-
-[HarmonyPatch(typeof(MetaprogressionSystem), nameof(MetaprogressionSystem.GetLockedClasses))]
-class PatchClasses : MonoBehaviour
-{
-    static List<ClassData> Postfix(List<ClassData> result)
-    {
-        return [];
-    }
-}
-

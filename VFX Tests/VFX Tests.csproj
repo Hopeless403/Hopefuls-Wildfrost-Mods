@@ -447,6 +447,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FMOD Stuff.cs" />
     <Compile Include="Patches.cs" />
     <Compile Include="StatusIcons patches.cs" />
     <Compile Include="StatusIcons stuff - SFX.cs" />
@@ -464,7 +465,7 @@
     <None Include="Unpublished\VFX - GIFLoader Loader - Preparticle.cs" />
     <Compile Include="VFX %28GIFs%29\VFX - GIFLoader Player.cs" />
     <Compile Include="VFX %28GIFs%29\VFX - GIFLoader Register.cs" />
-    <None Include="VFX %28GIFs%29\VFX - GIFAnimator.cs" />
+    <Compile Include="VFX %28GIFs%29\VFX - GIFAnimator.cs" />
     <Compile Include="SFXLoader.cs" />
     <Compile Include="VFX %28GIFs%29\VFX - APNGLoader.cs" />
     <Compile Include="VFX %28GIFs%29\VFX - GIFLoader.cs" />

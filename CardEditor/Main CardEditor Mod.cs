@@ -53,7 +53,7 @@ namespace CardEditor
             base.Load();
             //Resources.FindObjectsOfTypeAll<Sprite>().Update(SpriteHandler.ExportSprite);
 
-            string atlases = """
+            /*string atlases = """
                 BackgroundFrostAtlas
                 BackgroundIceAtlas
                 BackgroundSnowAtlas
@@ -97,7 +97,7 @@ namespace CardEditor
                 atlas.GetSprites(sprites);
                 Debug.LogWarning($"{key}: {sprites.All(s => s.texture == sprites[0].texture)}");
                 Debug.Log("\n" + sprites.Join(s => $">> {s.name}", delimiter:"\n"));
-            }
+            }*/
 
             /*foreach (var type in Resources.FindObjectsOfTypeAll<CharacterType>())
             {
@@ -126,7 +126,7 @@ namespace CardEditor
             }*/
 
 
-            /*foreach (var battle in AddressableLoader.GetGroup<BattleData>(nameof(BattleData)))
+            foreach (var battle in AddressableLoader.GetGroup<BattleData>(nameof(BattleData)))
             {
                 SpriteHandler.ExportSprite(battle.sprite, $"battle_{battle.name}");
             }
@@ -153,7 +153,7 @@ namespace CardEditor
             new Dictionary<string, object>
             {
                 ["key"] = "value"
-            };*/
+            };
 
 
             /*

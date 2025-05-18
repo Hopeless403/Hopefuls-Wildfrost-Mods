@@ -41,7 +41,6 @@ namespace WildfrostHopeMod.CommandsConsole
                     // these are in CreateUnit and CreateItem
                     nameof(CardData.canBeHit),
                     nameof(CardData.playType),
-                    nameof(CardData.cardType),
                     ];
 
 

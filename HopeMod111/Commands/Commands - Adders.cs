@@ -156,7 +156,8 @@ namespace WildfrostHopeMod.CommandsConsole
                         else if (Console.hover.enabled || (References.Player.entity.display is CharacterDisplay display && display.deckDisplay.gameObject.activeSelf))
                         {
                             StatusEffectData statusData = null;
-                            Entity applier = CardManager.Get(AddressableLoader.groups["CardData"].lookup["Junk"] as CardData, null, References.Player, false, false).entity;
+                            Entity applier = CardManager.Get(AddressableLoader.GetCardDataClone("Junk"), References.Battle?.playerCardController, References.Player, false, false).entity;
+                            applier.data.forceTitle = "<i><color=black>Console</color></i>";
                             Entity target = Console.hover;
                             string[] strArray = Split(args);
                             int count = 1;
@@ -193,8 +194,27 @@ namespace WildfrostHopeMod.CommandsConsole
             public override IEnumerator GetArgOptions(string currentArgs)
             {
                 if (!AddressableLoader.IsGroupLoaded("StatusEffectData")) yield return AddressableLoader.LoadGroup("StatusEffectData");
-                IEnumerable<StatusEffectData> source = AddressableLoader.GetGroup<StatusEffectData>("StatusEffectData").Where(a => a.visible && a.name.ToLower().Contains(currentArgs.ToLower()));
-                predictedArgs = source.Select(statusData => statusData.name).ToArray();
+                
+                IEnumerable<KeywordData> keywords = AddressableLoader.GetGroup<KeywordData>(nameof(KeywordData));
+                IEnumerable<StatusEffectData> source = AddressableLoader.GetGroup<StatusEffectData>("StatusEffectData").Where(data => data.visible);
+                Dictionary<StatusEffectData, string> titles = source.ToDictionary(k => k, statusData =>
+                {
+                    string title = null;
+                    if (!statusData.keyword.IsNullOrEmpty())
+                    {
+                        var keyword = keywords.FirstOrDefault(k => k.name.ToLowerInvariant() == statusData.keyword);
+                        title = (keyword?.titleKey?.IsEmpty ?? true) ? null : keyword.title;
+                    }
+                    return title;
+                });
+
+                predictedArgs = titles
+                    .Select(kvp => kvp.Value.IsNullOrEmpty() 
+                        ? kvp.Key.name 
+                        : $"{kvp.Key.name} \t// {kvp.Value}"
+                    )
+                    .Where(arg => arg.ToLower().Contains(currentArgs.ToLower()))
+                    .ToArray();
             }
         }
         public class CommandAddEffect : Console.Command
@@ -215,7 +235,8 @@ namespace WildfrostHopeMod.CommandsConsole
                         else if (Console.hover.enabled || (References.Player.entity.display is CharacterDisplay display && display.deckDisplay.gameObject.activeSelf))
                         {
                             StatusEffectData statusData = null;
-                            Entity applier = CardManager.Get(AddressableLoader.groups["CardData"].lookup["Junk"] as CardData, null, References.Player, false, false).entity;
+                            Entity applier = CardManager.Get(AddressableLoader.GetCardDataClone("Junk"), References.Battle?.playerCardController, References.Player, false, false).entity;
+                            applier.data.forceTitle = "<i><color=black>Console</color></i>"; 
                             Entity target = Console.hover;
                             string[] strArray = Split(args);
                             int count = 1;
@@ -273,7 +294,8 @@ namespace WildfrostHopeMod.CommandsConsole
                         else if (Console.hover.enabled || (References.Player.entity.display is CharacterDisplay display && display.deckDisplay.gameObject.activeSelf))
                         {
                             StatusEffectData statusData = null;
-                            Entity applier = CardManager.Get(AddressableLoader.groups["CardData"].lookup["Junk"] as CardData, null, References.Player, false, false).entity;
+                            Entity applier = CardManager.Get(AddressableLoader.GetCardDataClone("Junk"), References.Battle?.playerCardController, References.Player, false, false).entity;
+                            applier.data.forceTitle = "<i><color=black>Console</color></i>"; 
                             Entity target = Console.hover;
                             string[] strArray = Split(args);
                             int count = 1;
@@ -293,7 +315,7 @@ namespace WildfrostHopeMod.CommandsConsole
                             {
                                 target.attackEffects = CardData.StatusEffectStacks.Stack(target.attackEffects, [new CardData.StatusEffectStacks(statusData, count)]).Select(a => a.Clone()).ToList();
                                 Debug.Log($"[{statusData.name} {count}] applied to [{target.name}]");
-                                target.attackEffects.RemoveAllWhere(s => s.count <= 0);
+                                //target.attackEffects.RemoveAllWhere(s => s.count <= 0);
                                 target.display.promptUpdateDescription = true;
                                 target.PromptUpdate();
                                 if (OutOfBattleAddEffect(ref target.data.attackEffects, statusData, count))

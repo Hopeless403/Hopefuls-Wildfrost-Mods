@@ -496,6 +496,15 @@ namespace WildfrostHopeMod.VFX
                     """);*/
 
                 status.type = statusIconData.icon.type;
+
+                if (statusIconData.iconKeywords != null) {
+                    Debug.Log(statusIconData.iconKeywords.Join());
+                }
+                if (statusIconData.iconKeywordNames != null)
+                {
+                    Debug.LogWarning(statusIconData.iconKeywordNames.Join());
+                }
+
                 status.keyword = statusIconData.iconKeywords?.FirstOrDefault(t => t)?.name.ToLowerInvariant() ??
                     builder.Mod.Get<KeywordData>(statusIconData.iconKeywordNames?.FirstOrDefault()?.ToLowerInvariant() ?? "")?.name.ToLowerInvariant() ?? "";
                 status.isKeyword = false;

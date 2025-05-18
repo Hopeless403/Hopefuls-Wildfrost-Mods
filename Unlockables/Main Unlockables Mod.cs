@@ -2,6 +2,7 @@
 using FMODUnity;
 using HarmonyLib;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,6 +10,7 @@ using System.Reflection;
 using TMPro;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.Events;
 using UnityEngine.SocialPlatforms;
 using UnityEngine.UI;
 using static ChallengeListener;
@@ -105,7 +107,9 @@ namespace Unlockables
         public override string Description => $"Last update: {DateTime.Now}";
         public override void Load()
         {
-            var unlock = new UnlockDataBuilder(this).CreateItemReward("Unlock Pet IceForge",
+            
+
+            var unlock = new UnlockDataBuilder(this).CreatePetReward("Unlock Pet IceForge",
                 displayTitle: default,
                 displayDescription: "What are you doing there?"
                 );
@@ -143,17 +147,38 @@ namespace Unlockables
                   data.reward = TryGet<UnlockData>("Unlock Pet IceForge");
               });
 
-            var cards = new CardDataBuilder(instance); cards
+
+
+
+            LayoutElement layout = GetAsset<GameObject>("ProgressableCardStack").GetOrAdd<LayoutElement>();
+            (layout.preferredWidth, layout.preferredHeight) = (2.5f,3.65f);
+            CardStack stack = GetAsset<GameObject>("ProgressableCardStack").GetOrAdd<CardStack>();
+            GetAsset<GameObject>("ProgressableCardStack").GetComponentInChildren<ChallengeDisplayCreator>().challenge = null;
+
+
+            //GetAsset<GameObject>("ProgressableCardStack").GetOrAdd<CardStack>().onAdd.AddListener(onAdd);
+
+            var cards = new CardDataBuilder(instance)
                 .CreateUnit(name: "IceForge", englishTitle: "Ice Forge", idleAnim: "FloatAnimationProfile")
                 .WithCardType("Clunker")
-                .WithText("While active, add <+{s0}><keyword=attack> to all allies and <-{s1}><keyword=attack> to all enemies", SystemLanguage.English)
-                .SetStats(null, null, 0)
-                .SetSprites("IceForge_mainSprite.png", "IceForge_BG.png")
-                .WithValue(190)         // Base gold as an enemy: 4-6
+                .AddPool()
                 .SubscribeToAfterAllBuildEvent(data =>
                 {
+                    /// Note: IsPet breaks because it doesn't have a slotGrid...
                     data.Edit<CardData, CardDataBuilder>().IsItem(Get<ChallengeData>("Challenge Pet IceForge"));
+                    TryGet<UnlockData>("Unlock Pet IceForge").type = UnlockData.Type.Item;
+
+                    int extra = 0;
+                    for (var i = 0; i < extra; i++)
+                    {
+                        var c = Get<ChallengeData>("Challenge Pet IceForge").InstantiateKeepName();
+                        c.reward = TryGet<UnlockData>("Unlock Pet IceForge").InstantiateKeepName();
+                        c.reward.name += i.ToString();
+                        data.Edit<CardData, CardDataBuilder>().IsItem(c);
+                    }
+                    
                     //data.AddToPets(TryGet<UnlockData>("Unlock Pet IceForge").name);
+                    _ = nameof(PetHutPatches.UpdatePetChallenges); // data.AddToPets relies on this
 
                     //data.AddToItems();
                     data.startWithEffects = new CardData.StatusEffectStacks[]
@@ -165,15 +190,20 @@ namespace Unlockables
                     data.titleFallback = "Ice Forge";
                 });
 
-            var card2 = new CardDataBuilder(instance); card2
-                .CreateUnit(name: "IceForg2e", englishTitle: "Ice 222Forge", idleAnim: "FloatAnimationProfile")
+
+            
+
+            var card2 = new CardDataBuilder(instance)
+                .CreateUnit(name: "IceForge2", englishTitle: "Ice Forge", idleAnim: "FloatAnimationProfile")
                 .WithCardType("Clunker")
-                .WithText("While active, add <+{s0}><keyword=attack> to all allies and <-{s1}><keyword=attack> to all enemies", SystemLanguage.English)
-                .SetStats(null, null, 0)
-                .SetSprites("IceForge_mainSprite.png", "IceForge_BG.png")
-                .WithValue(190)         // Base gold as an enemy: 4-6
                 .SubscribeToAfterAllBuildEvent(data =>
                 {
+                    /// Note: IsPet breaks because it doesn't have a slotGrid...
+                    data.Edit<CardData, CardDataBuilder>().IsItem(Get<ChallengeData>("Challenge Pet IceForge"));
+                    data.AddToPets(TryGet<UnlockData>("Unlock Pet IceForge").name);
+                    _ = nameof(PetHutPatches.UpdatePetChallenges); // data.AddToPets relies on this
+
+                    //data.AddToItems();
                     data.startWithEffects = new CardData.StatusEffectStacks[]
                     {
                                 new CardData.StatusEffectStacks(instance.Get<StatusEffectData>("While Active Increase Attack To Allies (No Desc)"), 2),
@@ -185,19 +215,28 @@ namespace Unlockables
 
             assets = [unlock, listener, challenge, card2, cards];
 
-            Debug.LogWarning("PreLoaded:");
-            Resources.FindObjectsOfTypeAll<BuildingType>().Do(type =>
-            {
-                type.unlocks.Do(unlock => Debug.LogError((type, unlock)));
-            });
+            /*Debug.LogWarning("PreLoaded:");
+             * Addressables.LoadAssetsAsync<BuildingType>(
+                "Buildings", 
+                type => type.unlocks.Do(unlock => Debug.LogError((type, unlock)))
+            ).WaitForCompletion();*/
             base.Load();
-            Debug.LogWarning("Loaded:");
+            /*Debug.LogWarning("Loaded:");
             Resources.FindObjectsOfTypeAll<BuildingType>().Do(type =>
             {
                 type.unlocks.Do(unlock => Debug.LogError((type, unlock)));
-            });
-        }
+            });*/
 
+            
+            RestoreUnlocks();
+        }
+        /// <summary>
+        /// Gains Unlocks (and their requirements) from Completed Challenges
+        /// </summary>
+        static void RestoreUnlocks()
+        {
+            SaveSystem.instance.GetComponent<SaveFileChecker>().Start();
+        }
         public override void Unload()
         {
             base.Unload();
@@ -210,11 +249,31 @@ namespace Unlockables
             });
         }
 
+        [HarmonyPrefix]
         [HarmonyPatch(typeof(InventorHutSequence), nameof(InventorHutSequence.Start))]
-        static void Prefix(InventorHutSequence __instance)
+        static void InventorHutSequenceStart(InventorHutSequence __instance)
         {
             __instance.slotGrid = __instance.cardSlots[0].GetComponentInParent<GridLayoutGroup>();
-            __instance.slotGrid.transform.parent.Find("Challenge Grid")?.SetParent(__instance.slotGrid.transform);
+            if (__instance.slotGrid.TryGetComponent<Scroller>(out var scroller))
+            {
+                __instance.slotGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+                __instance.slotGrid.constraintCount = 6;
+                scroller.horizontal = false;
+            }
+
+            Transform[] challenges = __instance.slotGrid.transform.parent.Find("Challenge Grid")?.GetAllChildren() ?? [];
+            Transform[] slots = __instance.slotGrid.transform.GetAllChildren();
+            for (int i = 0; i < challenges.Length; i++)
+            {
+                Transform challenge = challenges[i];
+                if (i < slots.Length && slots[i])
+                {
+                    challenge.SetParent(slots[i]);
+                    challenge.localPosition = new Vector2(1.25f, 1.75f);// Vector2.zero;
+                    Debug.LogWarning($"local of {challenge} is {challenge.localPosition}");
+                }
+            }
+            //__instance.slotGrid.transform.parent.Find("Challenge Grid")?.SetParent(__instance.slotGrid.transform);
         }
 
         /*[HarmonyPostfix]
@@ -308,9 +367,10 @@ namespace Unlockables
         }
 
 
-        [HarmonyPatch(typeof(ChallengeDisplayCreator), nameof(ChallengeDisplayCreator.OnEnable))]
-        [HarmonyPatch(typeof(ChallengeDisplayCreator), nameof(ChallengeDisplayCreator.Check))]
-        public static bool Prefix(ChallengeDisplayCreator __instance, MethodInfo __originalMethod)
+        //[HarmonyPrefix]
+        //[HarmonyPatch(typeof(ChallengeDisplayCreator), nameof(ChallengeDisplayCreator.OnEnable))]
+        //[HarmonyPatch(typeof(ChallengeDisplayCreator), nameof(ChallengeDisplayCreator.Check))]
+        public static bool ChallengeDisplayCreator(ChallengeDisplayCreator __instance, MethodInfo __originalMethod)
         {
             Debug.LogError($"{__originalMethod.Name}ING DISPLAY: " + __instance.challenge);
             Debug.LogWarning($"""
@@ -319,8 +379,9 @@ namespace Unlockables
                 """);
             return true; 
         }
-        [HarmonyPatch(typeof(ChallengeProgressDisplay), nameof(ChallengeProgressDisplay.UpdateDisplay))]
-        public static bool Prefix(ChallengeProgressDisplay __instance)
+        //[HarmonyPrefix]
+        //[HarmonyPatch(typeof(ChallengeProgressDisplay), nameof(ChallengeProgressDisplay.UpdateDisplay))]
+        public static bool ChallengeProgressDisplay(ChallengeProgressDisplay __instance)
         {
             Debug.LogError($">>>>>> updatING DISPLAY: " + __instance.challengeData);
             Debug.LogWarning($"""

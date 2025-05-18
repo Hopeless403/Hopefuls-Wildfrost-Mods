@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using WildfrostHopeMod.Utils;
 
 namespace WildFlipper
 {
@@ -270,7 +271,7 @@ namespace WildFlipper
             }
 
 
-            [HarmonyPatch(typeof(StatusEffectOngoing), nameof(StatusEffectOngoing.StackRoutine))]
+            //[HarmonyPatch(typeof(StatusEffectOngoing), nameof(StatusEffectOngoing.StackRoutine))]
             public class PatchOngoing
             {
                 static IEnumerator Postfix(IEnumerator __result, StatusEffectOngoing __instance)

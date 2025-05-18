@@ -21,6 +21,9 @@ using System.Text.RegularExpressions;
 using UnityEngine.AddressableAssets;
 using static UnityEngine.ParticleSystem;
 using UnityEngine.U2D;
+using FMOD;
+using FMODUnity;
+using Debug = UnityEngine.Debug;
 
 namespace WildfrostHopeMod.Utils
 {
@@ -412,13 +415,91 @@ namespace WildfrostHopeMod.Utils
             return t;
         }
     }
-
+    // TODO: Need to move the patches for loading banks and the one for loading music save data
     public static partial class HopeUtils
     {
+        internal class PlatformMod : PlatformWindows
+        {
+            public WildfrostMod mod = new InternalMod(null);
+            public PlatformMod WithMod(WildfrostMod mod)
+            {
+                this.mod = mod;
+                this.Identifier = mod.GUID;
+                return this;
+            }
+            public override string DisplayName => "WildfrostMod";
+            public override string GetBankFolder()
+            {
+                if (mod != null)
+                    return Path.Combine(mod.ModDirectory, "audio");
+                return base.GetBankFolder();
+            }
+        }
+        private static readonly FieldInfo f_currentPlatform = AccessTools.Field(typeof(RuntimeManager), "currentPlatform");
+        public static FMOD.RESULT LoadFMOD(this WildfrostMod mod, string audioDirectory = "audio")
+        {
+            var ___instance = Resources.FindObjectsOfTypeAll<RuntimeManager>().First();
+            var originalPlatform = f_currentPlatform.GetValue(___instance);
+            var moddedPlatform = ScriptableObject.CreateInstance<PlatformMod>().WithMod(mod);
+
+            f_currentPlatform.SetValue(___instance, moddedPlatform);
+            try
+            {
+                var directory = mod.RelToAbsPath(audioDirectory);
+                foreach (var file in Directory.GetFiles(directory, "*.bank").OrderByDescending(p => p.Contains("Master")))
+                {
+                    string fileName = Path.GetFileNameWithoutExtension(file);
+                    Debug.Log($"[Hope Utils] Loading bank: {fileName}");
+                    RuntimeManager.LoadBank(fileName);
+                    //Debug.Log($"Should've loaded [{fileName}]");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+            finally
+            {
+                f_currentPlatform.SetValue(___instance, originalPlatform);
+            }
+            return FMOD.RESULT.OK;
+        }
+        public static FMOD.RESULT UnloadFMOD(this WildfrostMod mod, string audioDirectory = "audio")
+        {
+            var directory = mod.RelToAbsPath(audioDirectory);
+            foreach (var file in Directory.GetFiles(directory, "*.bank").OrderBy(p => p.Contains("Master")))
+            {
+                string fileName = Path.GetFileNameWithoutExtension(file);
+                Debug.LogWarning($"[Hope Utils] Unloading bank: {mod.GUID}.{fileName}");
+                RuntimeManager.UnloadBank($"{mod.GUID}.{fileName}");
+            }
+            return FMOD.RESULT.OK;
+        }
+        public static EventReference GetEventReference(this WildfrostMod mod, string path)
+        {
+            EventReference result = RuntimeManager.PathToEventReference(path);
+            if (!result.IsNull) return result;
+            
+            if (mod?.GUID != null)
+                result = RuntimeManager.PathToEventReference($"event:/{mod.GUID}/{path}");
+            if (!result.IsNull) return result;
+
+            result = RuntimeManager.PathToEventReference($"event:/{path}");
+            if (result.IsNull)
+                throw new FileNotFoundException($"GetEventReference couldn't find an FMOD event for [{mod.GUID}] with path [{path}]. " +
+                    $"Did you remember to use your GUID in the FMOD project?");
+
+            return result;
+        }
+        public static List<T> GetGroup<T>() where T : DataFile
+        {
+            return AddressableLoader.GetGroup<T>(typeof(T).Name);
+        }
+
         public static Texture2D PackTextures(this IEnumerable<Texture2D> textures, out Rect[] rects)
         {
-            Texture2D atlas = new(1 << 12, 1 << 12);
-            rects = atlas.PackTextures(textures.ToArray(), 2);
+            Texture2D atlas = new(1 << 13, 1 << 13);
+            rects = atlas.PackTextures(textures.ToArray(), 2, 1 << 13);
             return atlas;
         }
 
@@ -552,8 +633,8 @@ namespace WildfrostHopeMod.Utils
             //Debug.LogError(name + ".Sheet has " + allTextures.Count);
 
             // Initialise the texture atlas
-            Texture2D atlas = new(1 << 12, 1 << 12){ name = name };
-            Rect[] rects = atlas.PackTextures(allTextures.ToArray(), 2);
+            Texture2D atlas = new(1 << 13, 1 << 13){ name = name };
+            Rect[] rects = atlas.PackTextures(allTextures.ToArray(), 2, 1 << 13);
             Dictionary<Rect, Texture2D> lookup = allTextures.ToDictionary(t => rects[allTextures.IndexOf(t)]);
 
             // Initialise the material with the texture atlas
@@ -695,6 +776,8 @@ namespace WildfrostHopeMod.Utils
         public static ParticleSystem CreateParticleSystem(string name, string directoryWithPNGs = null, Texture2D[] textures = null, Sprite[] sprites = null)
         {
             List<Texture2D> allTextures = ConvertToTexture2D(directoryWithPNGs, textures, sprites);
+            float gray = 0.001984f;
+            Debug.LogWarning($"Particle system: {name}");
 
             // trying to change the "quad" to be the whole sprite and not just the opaque bits
             for (int i = 0; i < allTextures.Count; i++)
@@ -704,12 +787,13 @@ namespace WildfrostHopeMod.Utils
                     tex = allTextures[i] = tex.MakeReadable();
 
                 (int w, int h) = (tex.width - 1, tex.height - 1);
+                //tex.SetPixels(Enumerable.Range(0, (w + 1) * (h + 1)).Select(c => Color.red).ToArray());
                 List<(int x, int y)> coords = [
                     (0,0), (1,0),
                     (w,h), (w,h-1)
                     ];
                 foreach ((int x, int y) in coords)
-                    tex.SetPixel(x, y, Color.gray.WithAlpha(0.001984f));
+                    tex.SetPixel(x, y, Color.gray.WithAlpha(1 /*gray*/));
 
                 tex.Apply();
             }
@@ -721,14 +805,16 @@ namespace WildfrostHopeMod.Utils
             int n = 0;
             foreach (var rect in rects)
             {
+                
                 (float width, float height) = (rect.width * atlas.width, rect.height * atlas.height);
                 Rect spriteRect = new((int)(rect.x * atlas.width), (int)(rect.y * atlas.height), (int)(rect.width * atlas.width), (int)(rect.height * atlas.height));
+                //Debug.Log($"Got spriteRect {spriteRect} from {atlas.width} {atlas.height}"); 
                 string n_name = allTextures[n].name;
                 realSprites[n] = Sprite.Create(atlas, spriteRect, 0.5f * Vector2.one);
                 realSprites[n].name = n_name;
                 n++;
             }
-
+            //Debug.LogError("Got rect " + realSprites[0].textureRect + " for " + name);
             return atlas.ToParticleSystem(name, realSprites);
         }
         public static ParticleSystem ToParticleSystem(this Texture2D texture, string name, Rect[] spriteRects)
@@ -777,7 +863,10 @@ namespace WildfrostHopeMod.Utils
             main.startDelay = 0;
             main.startSpeed = 0;
             main.startLifetime = main.duration;
-            main.startSize = spritesFromTexture.First().rect.width;
+
+            Sprite sprite = spritesFromTexture.First();
+            main.startSize = sprite.rect.width / sprite.pixelsPerUnit;
+            //Debug.LogWarning($"maybe {main.startSize.constant}/3 for [{name}]");
             main.scalingMode = ParticleSystemScalingMode.Hierarchy;
             // Cursed way to avoid playing early
             main.playOnAwake = false; prefab.SetActive(true); main.playOnAwake = true;

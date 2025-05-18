@@ -25,32 +25,6 @@ namespace WildfrostHopeMod.SFX
 
     public static class HopeSFXSystem
     {
-        public static EventReference PathToEventReference(string path)
-        {
-            //FMODUnity.RuntimeManager.CreateInstance()
-            FMODUnity.RuntimeManager.CoreSystem.createSoundGroup("test group", out var soundGroup);
-            //soundGroup.
-            FMODUnity.RuntimeManager.CoreSystem.getMasterSoundGroup(out var soundGroup1);
-            Debug.LogWarning(soundGroup1.hasHandle());
-            //soundGroup1.
-            Debug.LogWarning(soundGroup1.getName(out string name, 5));
-            Debug.LogWarning(name);
-
-            EventReference e;
-            EventInstance i;
-            FMOD.Sound s;
-            return VFXMod.testReference;
-        }
-
-        internal class PatchInterpretEventReference
-        {
-
-        }
-
-
-
-
-
         internal static readonly Dictionary<string, FMOD.Sound> sounds = new();
         internal static readonly Dictionary<string, FMOD.Sound> whenHitSounds = new();
         internal static readonly Dictionary<string, FMODUnity.EventReference> eventRefs = new();
@@ -93,7 +67,13 @@ namespace WildfrostHopeMod.SFX
                         bank.getEventList(out var events);
                         foreach (var e in events)
                         {
+                            if (!e.isValid())
+                                continue;
+
                             e.getPath(out string path);
+                            if (FMODUnity.RuntimeManager.StudioSystem.lookupID(path, out _) == FMOD.RESULT.ERR_EVENT_NOTFOUND)
+                                continue;
+
                             if (path.IsNullOrEmpty()) continue;
                             this.events.Add(path.Replace("event:", ""));
                         }

@@ -18,6 +18,7 @@ using System.Runtime.CompilerServices;
 using static WildfrostHopeMod.ModUploader.Localizers;
 using UnityEngine.Localization.PropertyVariants.TrackedProperties;
 using System.Reflection;
+using System;
 
 namespace WildfrostHopeMod.ModUploader;
 public partial class ModUploader
@@ -43,7 +44,7 @@ public partial class ModUploader
         if (File.Exists(Path.Combine(mod.ModDirectory, "desc.txt")))
             modDescription = File.ReadAllText(Path.Combine(mod.ModDirectory, "desc.txt"));
 
-        Item curItem = (await GetPublishedItems()).Find((Item a) => a.Metadata == mod.GUID);
+        Item curItem = (await GetPublishedItems()).Find(item => string.Equals(item.Metadata, mod.GUID, System.StringComparison.InvariantCultureIgnoreCase));
 
         Editor editor;
         if (PublishedItems.Count == 0 || curItem.Equals(default(Item)))
@@ -67,18 +68,29 @@ public partial class ModUploader
         editor = editor.WithPreviewFile(iconPath);
         editor = editor.WithContent(mod.ModDirectory);
         editor = editor.WithMetaData(mod.GUID);
-        var result = await editor.SubmitAsync();
-        Steamworks.Ugc.Item? resultItem = await Steamworks.Ugc.Item.GetAsync(result.FileId);
-        foreach (string depend in mod.Depends)
+
+        PublishResult result = new PublishResult { Result = Result.NoConnection };
+        try
         {
-            Steamworks.Ugc.Item obj = PossibleDependencies.Find(a => a.Metadata == depend);
-            if (!curItem.Equals(new Steamworks.Ugc.Item()) && resultItem.HasValue)
+            result = await editor.SubmitAsync();
+            Steamworks.Ugc.Item? resultItem = await Steamworks.Ugc.Item.GetAsync(result.FileId);
+            foreach (string depend in mod.Depends)
             {
-                Debug.LogWarning("Added dependency: " + depend);
-                await resultItem.GetValueOrDefault().AddDependency(obj.Id);
+                Steamworks.Ugc.Item obj = PossibleDependencies.Find(a => a.Metadata == depend);
+                if (!curItem.Equals(new Steamworks.Ugc.Item()) && resultItem.HasValue)
+                {
+                    Debug.LogWarning("Added dependency: " + depend);
+                    await resultItem.GetValueOrDefault().AddDependency(obj.Id);
+                }
             }
         }
-        Debug.Log("Update result " + result.Result);
+        catch//(Exception ex)
+        {
+            //Debug.LogException(ex);
+        }
+        
+        Debug.LogError("Update result " + result.Result);
+        PromptSystem.SetSortingLayer("PauseMenu", 999);
         if (result.Success)
         {
             PromptSystem.Create(Prompt.Anchor.Left, 0, 0, 5, Prompt.Emote.Type.Happy, Prompt.Emote.Position.Above);
@@ -89,12 +101,19 @@ public partial class ModUploader
             PromptSystem.Create(Prompt.Anchor.Left, 0, 0, 5, Prompt.Emote.Type.Scared, Prompt.Emote.Position.Above);
             PromptSystem.instance.prompt.SetText(Localizers.Published_fail.Format(result.Result, FailedPublishResultText(result.Result)));
         }
-        await Task.Delay(4000);
-        PromptSystem.Hide();
-        PublishedItems.Clear();
 
+        PublishedItems.Clear();
         if (configText != null)
             File.WriteAllText(configPath, configText);
+
+        int waiting = 400;
+        while (!SplashScreenSequence.AnyButtonPressed() && --waiting > 0)
+        {
+            await Task.Yield();
+        }
+        PromptSystem.Hide();
+        await Task.Delay(167);
+        PromptSystem.SetSortingLayer("Prompt", 0);
     }
 
     public static string FailedPublishResultText(Result value)

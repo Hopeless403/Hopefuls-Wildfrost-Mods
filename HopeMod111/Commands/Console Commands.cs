@@ -14,6 +14,7 @@ using UnityEngine.AddressableAssets;
 using Newtonsoft.Json.Utilities;
 using HarmonyLib;
 using FMODUnity;
+using UnityEngine.UI;
 
 namespace WildfrostHopeMod.CommandsConsole
 {
@@ -34,7 +35,7 @@ namespace WildfrostHopeMod.CommandsConsole
                 if (type.IsSubclassOf(commandType) && !type.IsAbstract && commands.All(c => c.GetType() != type))
                 {
                     Console.Command command = Activator.CreateInstance(type) as Console.Command;
-                    if (command is ConsoleCustom.Command) 
+                    if (command is ConsoleCustom.Command or ICommandOverride) 
                         Console.commands.RemoveWhere(c => c.id == command.id);
                     if (debug || !command.desc.Contains("(WIP)"))
                         commands.Add(command);
@@ -97,6 +98,26 @@ namespace WildfrostHopeMod.CommandsConsole
                     card.gameObject.SetLayerRecursively(7);
                     yield return card.UpdateData(false);
                     card.transform.position = Vector3.zero;
+                    var t = card.mainImage.gameObject.transform;
+
+                    // Swapping out to using a solid shader
+                    // Default shader does some mystery alpha thing
+                    Dictionary<Material, Shader> shaders = [];
+                    Dictionary<MaskableGraphic, bool> maskables = [];
+                    card.GetComponentsInChildren<MaskableGraphic>().Do(m =>
+                    {
+                        if (!shaders.ContainsKey(m.material))
+                        {
+                            shaders[m.material] = m.material.shader;
+                            m.material.shader = Shader.Find("UI/Default");
+                        }
+                        /*if (!maskables.ContainsKey(m))
+                        {
+                            maskables[m] = m.maskable;
+                            m.maskable = false;
+                        }*/
+                    });
+                    card.frameImage.maskable = false;
                     yield return null;
                     GameObject newCameraObject = new GameObject("NewCamera");
                     ExportCards exportCards = new();
@@ -104,6 +125,11 @@ namespace WildfrostHopeMod.CommandsConsole
                     exportCards._camera.CopyFrom(Camera.main);
                     exportCards._camera.cullingMask = 1 << card.gameObject.layer;
                     Screenshot(exportCards, Path.Combine(ConsoleMod.Mod.ModDirectory, exportCards.folder, cardData.cardType.name), card.titleText.text + " (" + card.name + ").png", cardData.cardType.name == "Boss");
+
+                    shaders.Do(kvp => kvp.Key.shader = kvp.Value);
+                    maskables.Do(kvp => kvp.Key.maskable = kvp.Value);
+                    card.frameImage.maskable = true;
+
                     yield return null;
                     CardManager.ReturnToPool(card);
                     card = null;
@@ -158,7 +184,8 @@ namespace WildfrostHopeMod.CommandsConsole
                         bool flag = (cardData.mainSprite == null) || (cardData.mainSprite.name == "Nothing");
                         if (flag)
                             cardData.mainSprite = nothing;
-                        if (cardData.scriptableImagePrefab)
+
+                        if (cardData.scriptableImagePrefab && cardData.scriptableImagePrefab is Leader)
                         {
                             Debug.LogWarning("We found ourselves a dirty leader");
                             cardData.scriptableImagePrefab = null;
@@ -328,6 +355,7 @@ namespace WildfrostHopeMod.CommandsConsole
 
                         yield return CampaignNodeTypeBattle.BattleEnd(playerNode);
                         playerNode.cleared = wasCleared;
+                        Campaign.PromptSave();
                         yield return Sequences.SceneChange("MapNew");
                         Transition.End();
 
@@ -383,7 +411,13 @@ namespace WildfrostHopeMod.CommandsConsole
                         bank.getEventList(out var events);
                         foreach (var e in events)
                         {
+                            if (!e.isValid())
+                                continue;
+
                             e.getPath(out string path);
+                            if (FMODUnity.RuntimeManager.StudioSystem.lookupID(path, out _) == FMOD.RESULT.ERR_EVENT_NOTFOUND)
+                                continue;
+
                             if (!path.IsNullOrEmpty())
                                 this.events.Add(path.Replace("event:", ""));
                         }
@@ -409,14 +443,30 @@ namespace WildfrostHopeMod.CommandsConsole
             public override IEnumerator GetArgOptions(string currentArgs)
             {
                 predictedArgs = default;
-                yield return null;
-                IEnumerable<string> source = GetOptions().Where(a => a.ToLower().Contains(currentArgs.ToLower()));
+                IEnumerable<string> source = GetOptions().Where(e => e.ToLower().Contains(currentArgs.ToLower()));
                 if (source.Any()) predictedArgs = source.ToArray();
+                yield break;
             }
         }
 
-        
 
+        public class CommandSave : Console.Command
+        {
+            public override string id => "save run";
+            public override bool IsRoutine => false;
+
+            public override void Run(string args)
+            {
+                if (Campaign.instance)
+                {
+                    Campaign.PromptSave();
+                    BattleSaveSystem.instance?.Save();
+                }
+                    
+                else
+                    FailCannotUse();
+            }
+        }
 
         public class CommandBackupRestore : Console.Command
         {
@@ -434,20 +484,18 @@ namespace WildfrostHopeMod.CommandsConsole
                 SaveSystem.historySaver.CheckBackup(SaveSystem.folderName);
             }
         }
-        public class CommandSave : Console.Command
+        
+        public class CommandEyeTest : Console.Command
         {
-            public override string id => "save";
+            public override string id => "frosteye test";
             public override bool IsRoutine => false;
 
             public override void Run(string args)
             {
-                if (Campaign.instance)
-                    Campaign.PromptSave();
-                else
-                    FailCannotUse();
+                if (Console.hover)
+                    FrostEyeSystem.Create(Console.hover);
             }
 
         }
-
     }
 }

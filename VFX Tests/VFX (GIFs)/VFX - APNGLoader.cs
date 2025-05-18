@@ -55,6 +55,7 @@ public partial class GIFLoader
         bool destroyOnEnd = playType == PlayType.applyEffect || playType == PlayType.damageEffect;
         int loops = playType == PlayType.loopingAnimation ? -1 : 1;
         var result = CreateAPNGPrefab(path, loops, out GameObject prefab, name, destroyOnEnd);
+        //var result2 = CreateAPNGPrefab(path, loops, out GameObject prefab2, name + ".png", destroyOnEnd);
 
         if (prefab == null || !result)
         {
@@ -63,6 +64,7 @@ public partial class GIFLoader
         }
         name ??= Path.GetFileNameWithoutExtension(path);
         prefabs[name] = prefab;
+        //prefabs[name + ".png"] = prefab2;
         Debug.Log($"[VFX Tools] Loaded [{prefab.name}] from path {path}");
         return prefab;
     }
@@ -71,7 +73,56 @@ public partial class GIFLoader
         var path = Dir.GetFiles(Directory, $"{name}.*").First();
         return LoadAPNGFromPath(path, name, playType);
     }
+    public static bool CreateAPNGPrefab2(string path, int loops, out GameObject prefab, string name = null, bool destroyOnEnd = true)
+    {
+        if (!File.Exists(path))
+            throw new FileNotFoundException($"[VFX Tools] {path} doesn't exist! Make sure to include \".apng\"");
+        var apng = new APNG(path);
+        if (apng.IsSimplePNG)
+        {
+            Debug.LogWarning($"[VFX Tools] {path} isn't animated! Skipping...");
+            prefab = null;
+            return false;
+        }
 
+        name ??= Path.GetFileNameWithoutExtension(path);
+
+        Debug.LogError("Load APNG: " + Path.GetFileName(path));
+
+        byte[] data = File.ReadAllBytes(path);
+
+        List<Texture2D> frames = new();
+        List<float> delays = new();
+        foreach (var apngFrame in apng.Frames)
+        {
+            Texture2D texture = new Texture2D(2, 2);
+            texture.LoadImage(apngFrame.GetStream().ToArray());
+            frames.Add(texture);
+            delays.Add((float)apngFrame.fcTLChunk.DelayNum / apngFrame.fcTLChunk.DelayDen);
+        }
+
+        prefab = new GameObject(name, typeof(SpriteRenderer));
+        if (VFXMod.parent) prefab.transform.SetParent(VFXMod.parent);
+        else GameObject.DontDestroyOnLoad(prefab);
+        prefab.SetLayerRecursively(8);
+        prefab.GetComponent<SpriteRenderer>().sortingLayerID = -2147482037;
+        var gifAnimator = prefab.AddComponent<GIFAnimator>();
+        gifAnimator.frames = frames.Select(t => t.ToSpriteFull()).ToArray();
+        gifAnimator.delays = delays.ToArray();
+        gifAnimator.originalID = prefab.GetInstanceID();
+        gifAnimator.loops = loops;
+        gifAnimator.destroyOnEnd = destroyOnEnd;
+
+        if (gifAnimator.frames.Length == 0)
+        {
+            Debug.LogError($"[VFX Tools] {path} cannot be read!");
+            prefab.Destroy();
+            return false;
+        }
+        gifAnimator.enabled = true;
+        Debug.LogWarning($"[VFX Tools] Created prefab: [{name}] with ID {prefab.GetInstanceID()}!");
+        return true;
+    }
     public static bool CreateAPNGPrefab(string path, int loops, out GameObject prefab, string name = null, bool destroyOnEnd = true)
     {
         if (!File.Exists(path))
@@ -100,6 +151,7 @@ public partial class GIFLoader
             delays.Add((float)apngFrame.fcTLChunk.DelayNum / apngFrame.fcTLChunk.DelayDen);
         }
 
+        //Debug.LogWarning($"APNG: TEXTURE {name} HAS SIZE {frames[0].width} {frames[0].height}");
         ParticleSystem particles = HopeUtils
             .CreateParticleSystem(name, textures: frames.ToArray())
             .WithDelays(delays.ToArray());

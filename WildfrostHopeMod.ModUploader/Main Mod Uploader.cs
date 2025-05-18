@@ -118,21 +118,45 @@ public partial class ModUploader : WildfrostMod
             tagsCustom.Any() ? Localizers.Note_hasCustomTags.Format(string.Join(", ", tagsCustom)) : Localizers.Note_noCustomTags.String
             );
 
-        if (SceneManager.IsLoaded("Mods"))
-            CoroutineManager.Start(SceneManager.Unload("Mods"));
         HelpPanelSystem.instance.OnDisable();
         Localizers.ShowPanel(desc);
+        HelpPanelSystem.instance.GetComponent<Canvas>().sortingLayerName = "PauseMenu";
+        
+
         HelpPanelSystem.SetEmote(Prompt.Emote.Type.Basic);
         HelpPanelSystem.SetBackButtonActive(false);
-        HelpPanelSystem.AddButton(HelpPanelSystem.ButtonType.Negative, Localizers.Buttons_cancel, "Back", null);
-        HelpPanelSystem.AddButton(HelpPanelSystem.ButtonType.Positive, Localizers.Buttons_editTags, "Options", () => 
-            EditTags(path, tagsPrevious));
+        HelpPanelSystem.AddButton(HelpPanelSystem.ButtonType.Negative, Localizers.Buttons_cancel, "Back", ResetHelpPanelLayer);
+        HelpPanelSystem.AddButton(HelpPanelSystem.ButtonType.Positive, Localizers.Buttons_editTags, "Options", () =>
+        {
+            ResetHelpPanelLayer();
+            EditTags(path, tagsPrevious);
+        });
         HelpPanelSystem.AddButton(HelpPanelSystem.ButtonType.Positive, Localizers.GetString("UI Text", "confirm"), "Select", () =>
-            UpdateOrPublishToWorkshop(mod, tagsProvided, visibility)
-        );
+        {
+            ResetHelpPanelLayer();
+            UpdateOrPublishToWorkshop(mod, tagsProvided, visibility);
+        });
+
+        // Resolving conflict between GraphicRaycasters
+        if (SceneManager.Loaded.TryGetValue("Mods", out var scene))
+        {
+            GraphicRaycaster modsRaycaster = scene.FindObjectOfType<Canvas>()?.transform.Find("SafeArea/Menu")?.GetComponent<GraphicRaycaster>();
+            if (modsRaycaster)
+            {
+                modsRaycaster.enabled = false;
+                modsRaycaster.enabled = true;
+            }
+            else
+                CoroutineManager.Start(SceneManager.Unload("Mods"));
+        }
     }
 
-    const string explanation = "[Delete this later] Write new tags on new lines";
+    const string explanation = "[Delete this] Write new tags on new lines";
+
+    static void ResetHelpPanelLayer()
+    {
+        HelpPanelSystem.instance.GetComponent<Canvas>().sortingLayerName = "PopUp";
+    }
 
 
     public static void EditTags(string path, string[] tagsPrevious)

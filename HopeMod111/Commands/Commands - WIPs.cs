@@ -28,7 +28,7 @@ namespace WildfrostHopeMod.CommandsConsole
                     else
                     {
                         CampaignNodeType type = null;
-                        IEnumerable<CampaignNodeType> source = AddressableLoader.GetGroup<CampaignNodeType>("CampaignNodeType").Where(a => a.canLink && string.Equals(a.name, args, StringComparison.CurrentCultureIgnoreCase));
+                        IEnumerable<CampaignNodeType> source = AddressableLoader.GetGroup<CampaignNodeType>("CampaignNodeType").Where(a => a.interactable && string.Equals(a.name, args, StringComparison.CurrentCultureIgnoreCase));
                         if (source.Any())
                         {
                             type = source.First();
@@ -53,7 +53,7 @@ namespace WildfrostHopeMod.CommandsConsole
             public override IEnumerator GetArgOptions(string currentArgs)
             {
                 if (!AddressableLoader.IsGroupLoaded("CampaignNodeType")) yield return AddressableLoader.LoadGroup("CampaignNodeType");
-                IEnumerable<CampaignNodeType> source = AddressableLoader.GetGroup<CampaignNodeType>("CampaignNodeType").Where(a => a.canLink && a.name.ToLowerInvariant().Contains(currentArgs.ToLowerInvariant()));
+                IEnumerable<CampaignNodeType> source = AddressableLoader.GetGroup<CampaignNodeType>("CampaignNodeType").Where(a => a.interactable && a.name.ToLowerInvariant().Contains(currentArgs.ToLowerInvariant()));
                 predictedArgs = source.Select(CampaignNodeType => CampaignNodeType.name.Replace(" ", "")).ToArray();
             }
 

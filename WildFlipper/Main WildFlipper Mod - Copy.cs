@@ -31,24 +31,15 @@ using UnityEngine.AddressableAssets.ResourceLocators;
 using WildFlipper;
 using NexPlugin;
 using Steamworks;
-using System.Collections;
 using UnityEngine.EventSystems;
 using System.Threading.Tasks;
+using WildfrostHopeMod.Utils;
+using Extensions = Deadpan.Enums.Engine.Components.Modding.Extensions;
+using UnityEngine.AddressableAssets;
 
 
 namespace WildFlipper
 {
-    public static class Exts
-    {
-        /*public static DataFileBuilder OnModUnloaded<DataFile, DataFileBuilder>(this DataFile data, MethodBase unloadMethod)
-          where DataFile : global::DataFile
-          where DataFileBuilder : DataFileBuilder<DataFile, DataFileBuilder>, new()
-        {
-            Events.OnModUnloaded += unloadMethod;
-            return y;
-        }*/
-
-    }
     public partial class WildFlipperMod : WildfrostMod
     {
         
@@ -60,8 +51,10 @@ namespace WildFlipper
             instance = this;
         }
         
-        public override string GUID => "hope.wildfrost.WildFlipper";
-        public override string[] Depends => new string[] { };
+        public override string GUID => "hope.wildfrost.wildflipper";
+        public override string[] Depends => new string[] { 
+            //"hope.wildfrost.vfx" 
+        };
         public override string Title => "WildFlipper";
         public override string Description => $"Last update: {DateTime.Now}";
         public override TMP_SpriteAsset SpriteAsset => base.SpriteAsset;
@@ -81,172 +74,99 @@ namespace WildFlipper
         }
 
 
-        public class StatusEffectApplyXWhenAllyAheadIsHit : StatusEffectApplyXWhenAllyIsHit
+        public static List<T> GetGroup<T>() where T : DataFile
         {
-            public override bool RunPostHitEvent(Hit hit)
-            {
-                return base.RunPostHitEvent(hit) && IsInFrontOf(hit.target);
-            }
-
-            public bool IsInFrontOf(Entity entity)
-            {
-                foreach (CardContainer cardContainer in target.actualContainers)
-                {
-                    if (cardContainer is CardSlot cardSlot && cardContainer.Group is CardSlotLane lane)
-                    {
-                        for (int index = lane.slots.IndexOf(cardSlot) - 1; index >= 0; --index)
-                        {
-                            if (lane.slots[index].GetTop() == entity)
-                                return true;
-                        }
-                    }
-                }
-                return false;
-            }
+            return AddressableLoader.GetGroup<T>(typeof(T).Name);
         }
 
+        public GameObject SystemsParent => ScreenSystem.instance?.gameObject;
+        public static string CatalogFolder => Path.Combine(instance.ModDirectory, "Catalog");
+        public static string CatalogPath => Path.Combine(CatalogFolder, "catalog.json");
 
 
-        public Dictionary<CardData, CardData[]> leaderDeck = [];
-        public Dictionary<CardData, CardData[]> leaderReserve = [];
 
-
-
-        [HarmonyPatch(typeof(CampaignPopulator), nameof(CampaignPopulator.Populate))]
-        public static class PatchPopulator
-        {
-            public static IEnumerator Postfix(IEnumerator original)
-            {
-                var poolsToFix = (References.PlayerData.classData, References.PlayerData.classData.rewardPools.Clone());
-                if (References.PlayerData?.classData.ModAdded != instance)
-                {
-                    Debug.LogWarning("Adding custom pools!");
-                    if (References.LeaderData.original == instance.TryGet<CardData>("artemys.wildfrost.frostknights.closure"))
-                    {
-                        var unitPool = new Scriptable<RewardPool>(pool =>
-                        {
-                            pool.type = "Units";
-                            pool.list = instance.DataList<CardData>(
-                            "NakedGnomeFriendly",
-                            "NakedGnomeFriendly",
-                            "NakedGnomeFriendly",
-                            "NakedGnomeFriendly",
-                            "NakedGnomeFriendly",
-                            "NakedGnomeFriendly").Select(c => c.Clone() as DataFile).ToList();
-                        });
-
-                        References.PlayerData.classData.rewardPools = new RewardPool[]
-                        {
-                            unitPool,
-                            //Extensions.GetRewardPool("GeneralUnitPool"),
-                            Extensions.GetRewardPool("GeneralItemPool"),
-                            Extensions.GetRewardPool("GeneralCharmPool"),
-                            Extensions.GetRewardPool("GeneralModifierPool"),
-                            //Extensions.GetRewardPool("SnowUnitPool"),
-                            Extensions.GetRewardPool("SnowItemPool"),
-                            Extensions.GetRewardPool("SnowCharmPool"),
-                        };
-                    }
-                }
-
-                yield return original;
-
-                poolsToFix.classData.rewardPools = poolsToFix.Item2 as RewardPool[];
-            }
-        }
-
-        public (ClassData, RewardPool[]) poolsToFix = (null, null);
-        public void PreCampaignPopulate()
-        {
-            
-            // Only applies if the selected tribe is from this mod
-            if (References.PlayerData?.classData.ModAdded == this)
-                return;
-            poolsToFix = (References.PlayerData.classData, References.PlayerData.classData.rewardPools);
-
-            if (References.LeaderData.original == Get<CardData>("artemys.wildfrost.frostknights.closure"))
-            {
-                var unitPool = new Scriptable<RewardPool>(pool =>
-                {
-                    pool.type = "Units";
-                    pool.list = DataList<CardData>(
-                    "NakedGnomeFriendly",
-                    "NakedGnomeFriendly",
-                    "NakedGnomeFriendly",
-                    "NakedGnomeFriendly",
-                    "NakedGnomeFriendly",
-                    "NakedGnomeFriendly").Select(c => c.Clone() as DataFile).ToList();
-                });
-
-                References.PlayerData.classData.rewardPools = new RewardPool[]
-                {
-                    unitPool,
-                    //Extensions.GetRewardPool("GeneralUnitPool"),
-                    Extensions.GetRewardPool("GeneralItemPool"),
-                    Extensions.GetRewardPool("GeneralCharmPool"),
-                    Extensions.GetRewardPool("GeneralModifierPool"),
-                    //Extensions.GetRewardPool("SnowUnitPool"),
-                    Extensions.GetRewardPool("SnowItemPool"),
-                    Extensions.GetRewardPool("SnowCharmPool"),
-                };
-            }
-        }
-        public void ResetPoolsOnCampaignGenerated()
-        {
-            // Only applies if the selected tribe is from this mod
-            if (References.PlayerData?.classData.ModAdded != this)
-                return;
-
-            if (References.LeaderData.original == Get<CardData>("artemys.wildfrost.frostknights.closure"))
-            {
-                var unitPool = new Scriptable<RewardPool>(pool =>
-                {
-                    pool.type = "Units";
-                    pool.list = DataList<CardData>(
-                    "NakedGnomeFriendly",
-                    "NakedGnomeFriendly",
-                    "NakedGnomeFriendly",
-                    "NakedGnomeFriendly",
-                    "NakedGnomeFriendly",
-                    "NakedGnomeFriendly").Select(c => c.Clone() as DataFile).ToList();
-                });
-
-                References.PlayerData.classData.rewardPools = new RewardPool[]
-                {
-                    unitPool,
-                    //Extensions.GetRewardPool("GeneralUnitPool"),
-                    Extensions.GetRewardPool("GeneralItemPool"),
-                    Extensions.GetRewardPool("GeneralCharmPool"),
-                    Extensions.GetRewardPool("GeneralModifierPool"),
-                    //Extensions.GetRewardPool("SnowUnitPool"),
-                    Extensions.GetRewardPool("SnowItemPool"),
-                    Extensions.GetRewardPool("SnowCharmPool"),
-                };
-            }
-        }
         public override void Load()
         {
+            /*if (!Addressables.ResourceLocators.Any(r => r is ResourceLocationMap map && map.LocatorId == CatalogPath))
+                Addressables.LoadContentCatalogAsync(CatalogPath).WaitForCompletion();
+            var prefab = GetAsset<GameObject>("Assets/___ EXTERNAL/Event-Companion.prefab");
+            Debug.LogWarning(prefab);
+            if (prefab)
+            {
+                var comp = GetGroup<CampaignNodeType>().OfType<CampaignNodeTypeCompanion>().FirstOrDefault();
+                comp.routinePrefabRef = new AssetReferenceGameObject("Assets/___ EXTERNAL/Event-Companion.prefab");
+            }
+            prefab = GetAsset<GameObject>("Assets/___ EXTERNAL/Event-CopyItem.prefab");
+            Debug.LogWarning(prefab);
+            if (prefab)
+            {
+                Debug.LogWarning(new EventReference().Guid.ToString());
+                var comp = GetGroup<CampaignNodeType>().OfType<CampaignNodeTypeCopyItem>().FirstOrDefault();
+                //comp.routinePrefabRef = new AssetReferenceGameObject("Assets/___ EXTERNAL/Event-CopyItem.prefab");
+            }
+
+            var unlocks = GetGroup<UnlockData>();
+            var rewards = GetGroup<ChallengeData>().Select(c => c.reward);
+            foreach (var u in unlocks.Except(rewards))
+            {
+                Debug.LogError($"Missing unlock: {u}");
+            }
+
+            foreach (var u in rewards.Except(unlocks))
+            {
+                Debug.Log($"Missing reward: {u}");
+            }
+
+            List<string> res = [];
+            string Localize(LocalizedString key)
+            {
+                return !key?.IsEmpty ?? false ? key.GetLocalizedString() : "";
+            }
+            foreach (var c in GetGroup<ChallengeData>())
+            {
+                res.Add($"{c.name}\t" +
+                    $"{Localize(c.titleKey)}\t" +
+                    $"{Localize(c.textKey)}\t" +
+                    $"{c.requires.Join(cc => cc.name)}\t" +
+                    //$"{Localize(c.rewardKey)}\t" + // "New Charm Unlocked!" etc
+                    $"{c.reward.name}\t" +
+                    //$"{c.reward.active}\t" +
+                        /// Note: the other activeInX are literally unused
+                    $"{c.reward.requires.Join(cc => cc.name)}\t" + // Unlocks require their related building to be finished
+                    $"{c.hidden}\t" + // 1. ChallengeStones show "???"; 2. ChallengeList won't show it in progress
+                    $"{c.goal}\t" + // Usually 1, indicating if it's done or not
+                    $"{c.listener}");
+            }*/
+            //GUIUtility.systemCopyBuffer = res.Join(delimiter: "\n");
+
+
+            var system = ScreenSystem.instance?.gameObject.GetOrAdd<BiggerBoardSystem>();
+            if (system)
+            {
+                system.enabled = true;
+                system.targetRowCount = 5;
+                system.targetSlotCount = 5;
+                system.tryResizing = true;
+            }
+
             int dir = -1;
             Vector2 range = new Vector2(0, 10);
             for (int i = 4; range.InRange(i); i += dir)
             {
-                Debug.LogWarning(i);
+                //Debug.LogWarning(i);
                 //dir = Dead.PettyRandom.Sign();
             }
 
             _ = nameof(IReadOnlyList<CardData>);
-            WildFlipperModHelpers.
-                        InitAssets();
-
+            //WildFlipperModHelpers.InitAssets();
+            _ = typeof(Battle);
             base.Load();
             
-
             //assets.Add(StatusCopyBoxed<StatusEffectWhileInHandX>("While Active Add Equal Attack To Junk In Hand", "While In Hand Add Equal Attack To Junk In Hand"));
 
             //Events.OnEntityCreated += ChangeSprite;
-            Events.OnSceneChanged += AddAbilityTargets;
+            //Events.OnSceneChanged += AddAbilityTargets;
             Events.OnBattleStateBuilt += ChangeRedraw;
-            Events.OnPreCampaignPopulate += PreCampaignPopulate;
 
         }
         private T[] DataList<T>(params string[] names) where T : DataFile => names.Select(TryGet<T>).ToArray();
@@ -262,11 +182,14 @@ namespace WildFlipper
         }
         public override void Unload()
         {
+            var system = ScreenSystem.instance?.gameObject.GetComponents<GameSystem>().FirstOrDefault(g => g.name == nameof(BiggerBoardSystem));
+            if (system)
+                system.enabled = false;
+
             base.Unload();
             behaviour.DestroyImmediate();
             //Events.OnEntityCreated -= ChangeSprite;
-            Events.OnPreCampaignPopulate -= PreCampaignPopulate;
-            Events.OnSceneChanged -= AddAbilityTargets;
+            //Events.OnSceneChanged -= AddAbilityTargets;
             Events.OnBattleStateBuilt -= ChangeRedraw;
         }
         public Dictionary<string, GameObject> targetPrefabs = new Dictionary<string, GameObject>();
@@ -354,21 +277,11 @@ namespace WildFlipper
 
         public static List<object> assets = new List<object>();
 
-        public class Scriptable<T> where T : ScriptableObject, new()
-        {
-            readonly Action<T> modifier;
-            public Scriptable() { }
-            public Scriptable(Action<T> modifier) { this.modifier = modifier; }
-            public static implicit operator T(Scriptable<T> scriptable)
-            {
-                T result = ScriptableObject.CreateInstance<T>();
-                scriptable.modifier?.Invoke(result);
-                return result;
-            }
-        }
 
         public override List<T> AddAssets<T, Y>()
         {
+            //Debug.LogWarning("Requesting type of " + typeof(Y).Name);
+            //Debug.Log(assets.Join());
             if (assets.OfType<T>().Any())
                 this.Log($"adding {typeof(Y).Name}s: {assets.OfType<T>().Select(a => a._data.name).Join()}");
             return assets.OfType<T>().ToList();

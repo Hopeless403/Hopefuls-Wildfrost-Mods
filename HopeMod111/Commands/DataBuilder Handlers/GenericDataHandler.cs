@@ -110,64 +110,6 @@ namespace WildfrostHopeMod.CommandsConsole
                     }
                     return builder.ToString();
                 }
-
-                public struct StatusEffectDataInfo
-                {
-                    public string name;
-                    public string englishText;
-                    public Dictionary<SystemLanguage, string> texts = [];
-                    public string textInsert;
-                    public int textOrder;
-                    public bool isStatus;
-                    public bool isReaction;
-                    public bool isKeyword;
-                    public string keyword;
-                    public string type;
-                    public string iconGroupName;
-                    public bool visible;
-                    public bool stackable = true;
-                    public bool offensive;
-                    public bool makesOffensive;
-                    public bool doesDamage;
-                    public bool canBeBoosted;
-
-                    public StatusEffectDataInfo(StatusEffectData data)
-                    {
-                        this.name = data.name.Replace(data.ModAdded?.GUID + ".", "");
-
-                        Locale originalLocaleOverride = data.textKey.LocaleOverride;
-                        Locale englishLocale = LocalizationSettings.ProjectLocale;
-                        foreach (var locale in LocalizationSettings.Instance.GetAvailableLocales().Locales)
-                        {
-                            SystemLanguage lang = typeof(SystemLanguage).GetEnumValues().Cast<int>().Select(i => (i, (SystemLanguage)i))
-                                .FirstOrDefault(pair => locale.Identifier == new LocaleIdentifier(pair.Item2)).Item2;
-                            if (lang == default) continue;
-                            if (!data.textKey.IsEmpty)
-                            {
-                                data.textKey.LocaleOverride = locale;
-                                texts[lang] = data.textKey.GetLocalizedString();
-                                data.textKey.LocaleOverride = originalLocaleOverride;
-                            }
-                            else texts[lang] = "";
-                        }
-                        this.englishText = texts[SystemLanguage.English];
-
-                        this.textInsert = data.textInsert;
-                        this.textOrder = data.textOrder;
-                        this.isStatus = data.isStatus;
-                        this.isReaction = data.isReaction;
-                        this.isKeyword = data.isKeyword;
-                        this.keyword = data.keyword;
-                        this.type = data.type;
-                        this.iconGroupName = data.iconGroupName;
-                        this.visible = data.visible;
-                        this.stackable = data.stackable;
-                        this.offensive = data.offensive;
-                        this.makesOffensive = data.makesOffensive;
-                        this.doesDamage = data.doesDamage;
-                        this.canBeBoosted = data.canBeBoosted;
-                }
-                }
             }
         }
     }

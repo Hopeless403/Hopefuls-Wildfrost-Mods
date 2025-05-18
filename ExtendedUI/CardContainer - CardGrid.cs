@@ -35,7 +35,7 @@ namespace ExtendedUI
             grid.cellSize = cellSize;
             grid.columnCount = columnCount;
 
-            gridObj.AddScrollers(); // No click-and-drag. That needs Scroll View
+            //gridObj.AddScrollers(); // No click-and-drag. That needs Scroll View
                                     // Change scroller.bounds here if it only scrolls partially
 
             return grid;
@@ -56,7 +56,7 @@ namespace ExtendedUI
 
             lane.SetDirection(direction);
 
-            laneObj.AddScrollers(); // No click-and-drag. That needs Scroll View
+            //laneObj.AddScrollers(); // No click-and-drag. That needs Scroll View
                                     // Change scroller.bounds here if it only scrolls partially
 
             return lane;
@@ -124,7 +124,7 @@ namespace ExtendedUI.Helpers
         }
         public static IEnumerator Populate(this CardContainer cardContainer, params CardData[] cardDatas)
         {
-            yield return Populate(cardContainer, cardDatas.Select(cardData => CardManager.Get(cardData, null, null, false, true).entity).ToArray());
+            yield return Populate(cardContainer, cardDatas.Select(cardData => CardManager.Get(cardData, cardContainer.cc, null, false, true).entity).ToArray());
         }
         public static IEnumerator Populate(this CardContainer cardContainer, params Entity[] entities)
         {
@@ -138,7 +138,7 @@ namespace ExtendedUI.Helpers
                 clump.Add((entity.display as Card).UpdateData(false));
             }
             yield return (object)clump.WaitForEnd();
-            cardContainer.SetSize(4, 0.67f);
+            //cardContainer.SetSize(4, 0.67f);
             for (int index = 0; index < cardContainer.Count; ++index)
             {
                 Entity entity = cardContainer[index];

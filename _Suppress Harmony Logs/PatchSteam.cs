@@ -20,7 +20,8 @@ public class PatchSteam
     {
         try
         {
-            Resources.FindObjectsOfTypeAll<Bootstrap>().First().ModsSetup();
+            Bootstrap.workshupPrepDone = true;
+            //Resources.FindObjectsOfTypeAll<Bootstrap>().First().ModsSetup();
             SteamClient.Init(SteamManager.appId);
             Debug.LogWarning("INIT successfully");
         }
@@ -28,7 +29,20 @@ public class PatchSteam
         {
             Debug.LogError($"Steam failed to initialize! ({ex})");
             Debug.LogWarning("[Harmony Suppressor] Continuing without Steam");
-            Fallback();
+            string path = Path.Combine(Application.streamingAssetsPath.Replace('/', Path.DirectorySeparatorChar), "Mods");
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
+            string[] directories = Directory.GetDirectories(path);
+            /*for (int i = 0; i < directories.Length; i++)
+            {
+                var info = new DirectoryInfo(directories[i]).FullName;
+                if (Bootstrap.Mods.All(m => new DirectoryInfo(m.ModDirectory).FullName != info))
+                    Bootstrap.LoadModAtPath(directories[i]);
+            }*/
+            //Fallback();
             return false;
         }
         SteamClient.Shutdown();
@@ -43,6 +57,7 @@ public class PatchSteam
         Directory.GetDirectories(workshop).Update(path => {
         try {
             var info = new DirectoryInfo(path).FullName;
+                if (info.Contains("3157544232")) return;
             if (Bootstrap.Mods.All(m => new DirectoryInfo(m.ModDirectory).FullName != info))
                 Bootstrap.LoadModAtPath(path);
             } catch { }
@@ -52,7 +67,7 @@ public class PatchSteam
         data.versionFormat = string.Join("\n", a);
     }
 }
-[HarmonyPatch(typeof(Bootstrap), nameof(Bootstrap.ModsSetup))]
+//[HarmonyPatch(typeof(Bootstrap), nameof(Bootstrap.ModsSetup))]
 public class PatchBootstrap2
 {
 

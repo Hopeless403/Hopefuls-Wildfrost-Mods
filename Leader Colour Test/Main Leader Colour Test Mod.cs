@@ -9,6 +9,7 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.XR;
 
 namespace WildfrostHopeMod.Leader_Colour_Test
 {
@@ -58,13 +59,128 @@ namespace WildfrostHopeMod.Leader_Colour_Test
         {
             base.Load();
 
+            var buttonGroup = GameObject.Find("Canvas/SafeArea/Buttons");
+            Debug.LogWarning(buttonGroup);
+
             behaviour = new GameObject(Title);
             GameObject.DontDestroyOnLoad(behaviour);
-            var e = behaviour.AddComponent<Leader_Colour_TestModBehaviour>();
+            if (!IsLocal)
+                behaviour.AddComponent<Leader_Colour_TestModBehaviour>();
+            else
+            {
+                behaviour.transform.SetParent(buttonGroup.transform);
+                CoroutineManager.Start(Routine());
+
+                IEnumerator Routine()
+                {
+                    Setup();
+                    var icon = Resources.FindObjectsOfTypeAll<ModifierIcon>()
+                        .FirstOrDefault(i => i.name == "BellModifierIcon")?.InstantiateKeepName();
+                    if (!icon) yield break;
+                    //icon.transform.SetParent(behaviour.transform);
+                    icon.transform.position = Vector2.zero;
+                    icon.transform.localScale *= 3
+                            * Mathf.Max(275 / 238f)
+                            ;
+                    /*foreach (var mod in AddressableLoader.GetGroup<GameModifierData>(nameof(GameModifierData))
+                        .Where(g => g.visible))
+                    {
+                        icon.Set(mod, Vector2.zero);
+                        yield return ScreenshotRoutine(filename: mod.titleKey.GetLocalizedString());
+                    }*/
+                    yield return ScreenshotRoutine(Screen.width, Screen.height, filename: DateTime.Now.ToFileTimeUtc().ToString());
+                    icon.Destroy();
+                }
+            }
 
             Events.OnEntityCreated += Subscribe;
         }
+        public void Setup()
+        {
+            var rect = behaviour.GetOrAdd<RectTransform>();
+            rect.sizeDelta = Vector2.one;
 
+            behaviour.transform.position = Vector2.zero
+                .WithZ(Camera.main.transform.position.z * 0.6299f)
+                ;
+            behaviour.GetOrAdd<LayoutElement>().ignoreLayout = true;
+            behaviour.GetOrAdd<Canvas>().gameObject.layer = 8;
+            var image = behaviour.GetOrAdd<Image>();
+
+            int test = 512;
+            rect.sizeDelta *= test / 256f;
+
+            var t = new Texture2D(test, 1) { filterMode = FilterMode.Point };
+            int y = 0;
+            for (int x = 0; x < t.width; x++)
+            {
+                var f = (x % 256) / 255f;
+                t.SetPixel(x, y, new Color(f, f, f));
+            }
+            t.Apply();
+            image.sprite = Sprite.Create(t, new Rect(0, 0, t.width, t.height), Vector2.zero);
+
+            image.color = Color.white.WithAlpha(0);
+        }
+        public IEnumerator ScreenshotRoutine(int width = 512, int height = 512, string filename = null)
+        {
+            GameObject newCameraObject = new GameObject("NewCamera");
+            var camera = newCameraObject.AddComponent<Camera>();
+            camera.CopyFrom(Camera.main);
+            camera.cullingMask = (1 <<
+                (behaviour.GetComponent<Canvas>()?.gameObject.layer
+                ?? behaviour.GetComponentInParent<Canvas>()?.gameObject.layer
+                ?? 5
+                )
+            ); //(1 << behaviour.layer);
+            string layerMask = Convert.ToString(camera.cullingMask, 2);
+            float cameraZ = behaviour.transform.position.z;
+
+            
+
+            Screenshot(camera, ModDirectory, $"{(!filename.IsNullOrEmpty() ? filename : DateTime.Now.ToFileTimeUtc())}.png",
+                //Screen.width, Screen.height
+                width, height
+                );
+            // exportCards.camera.targetTexture = null; // the MainCamera's target texture has to be null
+            // exportCards.camera.cullingMask = -1; // this renders every layer
+            newCameraObject.Destroy();
+            yield return null;
+
+        }
+        public void Screenshot(Camera camera, string directory, string fileName, int width, int height)
+        {
+            Dictionary<Material, Shader> shaders = [];
+            Dictionary<Image, bool> frameImages = [];
+            Resources.FindObjectsOfTypeAll<Image>().Do(m =>
+            {
+                if (m.name == "FrameImage")
+                {
+                    frameImages[m] = m.maskable;
+                    m.maskable = false;
+                }
+                if (shaders.ContainsKey(m.material)) return;
+                shaders[m.material] = m.material.shader;
+                m.material.shader = Shader.Find("UI/Default");
+            });
+
+            string text = directory + "/" + fileName;
+            Texture2D texture2D = new Texture2D(width, height, TextureFormat.ARGB32, mipChain: false);
+            RenderTexture renderTexture = new RenderTexture(Screen.width, Screen.height, 24);
+            camera.targetTexture = renderTexture;
+            camera.Render();
+            RenderTexture.active = renderTexture;
+            texture2D.ReadPixels(new Rect((renderTexture.width - width) / 2, (Screen.height - height) / 2, width, height), 0, 0);
+            texture2D.Apply();
+            byte[] bytes = texture2D.EncodeToPNG();
+            Directory.CreateDirectory(directory);
+            File.WriteAllBytes(text, bytes);
+            Debug.Log(text);
+
+            shaders.Do(kvp => kvp.Key.shader = kvp.Value);
+            frameImages.Do(kvp => kvp.Key.maskable = kvp.Value);
+
+        }
         public override void Unload()
         {
             Events.OnEntityCreated -= Subscribe;

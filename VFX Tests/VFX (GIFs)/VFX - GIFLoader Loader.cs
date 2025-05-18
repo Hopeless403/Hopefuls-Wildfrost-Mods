@@ -51,6 +51,7 @@ public partial class GIFLoader
         bool destroyOnEnd = playType == PlayType.applyEffect || playType == PlayType.damageEffect;
         int loops = playType == PlayType.loopingAnimation ? -1 : 1;
         var result = CreateGifPrefab(path, loops, out GameObject prefab, name, destroyOnEnd);
+        //var result2 = CreateGifPrefab2(path, loops, out GameObject prefab2, name + ".gif", destroyOnEnd);
 
         if (prefab == null || !result)
         {
@@ -58,6 +59,7 @@ public partial class GIFLoader
             return null;
         }
         prefabs[name] = prefab;
+        //prefabs[name + ".gif"] = prefab2;
         Debug.Log($"[VFX Tools] Loaded [{prefab.name}] from path {path}");
         return prefab;
     }

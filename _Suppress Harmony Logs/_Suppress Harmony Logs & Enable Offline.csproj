@@ -39,6 +39,7 @@
   </PropertyGroup>
   <PropertyGroup />
   <ItemGroup>
+    <Compile Include="QoL Patches.cs" />
     <Compile Include="HarmonySuppressorMod.cs" />
     <Compile Include="PatchModLocalUpdate.cs" />
     <Compile Include="PatchNRE.cs" />
@@ -47,7 +48,6 @@
     <Compile Include="random patches.cs" />
     <None Include="Always Updated.cs" />
     <None Include="BCE.cs" />
-    <None Include="Harmony Suppressor - Copy.cs" />
     <Compile Include="Harmony Suppressor.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -198,6 +198,9 @@
     <Reference Include="UnityEngine.UIModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Wildfrost\Modded\Wildfrost_Data\Managed\UnityEngine.UIModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityExplorer.STANDALONE.Mono">
+      <HintPath>..\..\..\..\..\workshop\content\1811990\3145754526\UnityExplorer.STANDALONE.Mono.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

@@ -35,7 +35,6 @@ public class PatchTargetingArrowSystem
         currentArrow.ResetStyle();
     }
 
-
     [HarmonyPostfix]
     [HarmonyPatch(typeof(TargetingArrowSystem), nameof(TargetingArrowSystem.EntityHover))]
     public static void EntityHover(TargetingArrowSystem __instance, Entity entity)

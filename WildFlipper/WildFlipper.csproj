@@ -563,19 +563,25 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BiggerBoardSystem.cs" />
     <Compile Include="CardScriptGiveRandomUpgrade.cs" />
     <Compile Include="CardSlotLaneSimplified.cs" />
     <Compile Include="Main WildFlipper Mod - Copy.cs" />
+    <Compile Include="Patches\BrokenTweenOnDiscard.cs" />
     <Compile Include="Patches\ExtraPopups.cs" />
     <Compile Include="Patches\IgnoreSilence.cs" />
     <Compile Include="Patches\PopUpStats.cs" />
     <Compile Include="Patches\PatchRewards.cs" />
     <Compile Include="Patches\PatchTargetingArrowSystem.cs" />
+    <Compile Include="PatchPopulator.cs" />
+    <Compile Include="StatusEffectApplyXWhenAllyAheadIsHit.cs" />
+    <Compile Include="Statuses\StatusEffectApplyXWhenCardMoves.cs" />
     <Compile Include="Statuses\StatusEffectBlockPlayAction.cs" />
     <Compile Include="Statuses\StatusEffectRetain.cs" />
-    <Compile Include="Statuses\StatusEffectApplyXWhenCardMoves.cs" />
+    <Compile Include="Statuses\StatusEffectApplyXWhenXAppliedTo.cs" />
     <Compile Include="Statuses\StatusEffectRecycleX.cs" />
     <Compile Include="Statuses\StatusEffectShowPet.cs" />
+    <Compile Include="Statuses\StatusEffectTemporaryFlipped.cs" />
     <Compile Include="Statuses\StatusEffectUnshovable.cs" />
     <Compile Include="Statuses\StatusEffectWhenCharmedRunScript.cs" />
     <Compile Include="TargetConstraintInColumn.cs" />
@@ -591,13 +597,24 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="icon.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ICSharpCode.Decompiler">
       <Version>8.2.0.7535</Version>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VFX Tests\VFX Tests.csproj">
+      <Project>{C949A8EE-EF2E-47F4-BECF-78FD6AB53EDC}</Project>
+      <Name>VFX Tests</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\WildfrostHopeMod.Utils\_WildfrostHopeMod.Utils.csproj">
+      <Project>{A184DF6B-C99E-4C0A-B3C5-CCB48BF7A39A}</Project>
+      <Name>_WildfrostHopeMod.Utils</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -14,16 +14,6 @@ namespace WildfrostHopeMod.CommandsConsole
 {
     public partial class ConsoleMod : WildfrostMod
     {
-        public override List<T> AddAssets<T, Y>()
-        {
-            if (typeof(StatusEffectDataBuilder).IsAssignableFrom(typeof(T)))
-            {
-                return [new StatusEffectDataBuilder()
-                    .Create<StatusEffectApplyXInstant>("yeee")
-                    .SubscribeToAfterAllBuildEvent<StatusEffectApplyXInstant>(Debug.LogError) as T];
-            }
-            else return [];
-        }
         public static ConsoleMod Mod;
         /// <summary>
         /// Constructs an instance of <see cref="T:WildfrostHopeMod.CommandsConsole.ConsoleMod"/>

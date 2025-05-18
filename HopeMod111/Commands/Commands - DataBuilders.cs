@@ -21,6 +21,8 @@ using UnityExplorer.Inspectors;
 using UnityExplorer.CacheObject;
 using UnityExplorer.CacheObject.Views;
 using Unity.Burst.Intrinsics;
+using ICSharpCode.Decompiler.CSharp.Syntax;
+using UnityEngine.AddressableAssets;
 
 namespace WildfrostHopeMod.CommandsConsole;
 
@@ -41,7 +43,7 @@ public partial class ConsoleCustom
         if (typeName.IsEmpty() || (strArray.Length <= 1 && currentArgs.LastOrDefault() != ' '))
         {
             
-            IEnumerable<Type> sourceType = WildfrostMod.AllDataTypes.Where(a => a.Name.ToLower().Contains(typeName.ToLower()));
+            IEnumerable<Type> sourceType = WildfrostMod.AllDataTypes.Where(a => a != typeof(BuildingPlotType) && a.Name.ToLower().Contains(typeName.ToLower()));
 
             if (sourceType.Any())
             {
@@ -55,7 +57,24 @@ public partial class ConsoleCustom
             {
                 Type dataType = sourceType.First();
                 string assetName = currentArgs.Remove(0, typeName.Length + 1);
-                if (!AddressableLoader.IsGroupLoaded(dataType.Name)) yield return AddressableLoader.LoadGroup(dataType.Name);
+                if (!AddressableLoader.IsGroupLoaded(dataType.Name)) 
+                    yield return AddressableLoader.LoadGroup(dataType.Name);
+
+                HashSet<DataFile> buildings = [];
+                if (dataType == typeof(BuildingType))
+                {
+                    Action<BuildingType> callback = null;
+                    if (!AddressableLoader.groups[dataType.Name].lookup.ContainsKey("Balloon"))
+                    {
+                        Debug.LogWarning($"[AConsole] Manually adding BuildingTypes to the group! " +
+                        $"Make sure to use GetAsset<BuildingType>(\"Buildings/<name>\") instead of Get<BuildingType>(<name>)");
+                        callback = obj => AddressableLoader.AddToGroup(nameof(BuildingType), obj);
+                    }
+                    
+                    foreach (var building in Addressables.LoadAssetsAsync("BuildingTypes", callback).WaitForCompletion() ?? [])
+                    { buildings.Add(building); }
+                }
+
                 IEnumerable<DataFile> source = AddressableLoader.GetGroup<DataFile>(dataType.Name).Where(data =>
                 {
                     string title = null;
@@ -75,7 +94,14 @@ public partial class ConsoleCustom
                         if (dataType != typeof(KeywordData) || (bool)dataType.GetProperty("HasTitle").GetValue(data))
                             title = (string)dataType.GetProperty("title").GetValue(data) ?? "";
                     }
+                    else if (dataType == typeof(BuildingType) && buildings.Contains(data))
+                    {
+                        title = $"Note: Use with `<#ff0>GetAsset<BuildingType>(<#99f>\"Buildings/{data.name}.asset\"</color>)</color>`";
+                    }
+
                     if (!title.IsNullOrEmpty()) return $"{dataType.Name} {data.name} \t// {title}";
+                    
+
                     else return $"{dataType.Name} {data.name}";
                 }).ToArray();
             }
@@ -210,8 +236,11 @@ public partial class ConsoleCustom
                     result = new CardDataHandler().Info(file as CardData)[2..];
                     break;
                 case nameof(StatusEffectData):
-                    result = new StatusEffectDataHandler().Info(file as StatusEffectData)[2..];
+                    result = new BuildingTypeHandler().Info(file as StatusEffectData)[2..];
                     break;
+                case nameof(KeywordData):
+                    //result = new KeywordDataHandler().Info(file as KeywordData)[2..];
+                    //break;
                 case nameof(CardUpgradeData):
                 case nameof(UnlockData):
                 case nameof(ChallengeData):
@@ -248,7 +277,8 @@ public partial class ConsoleCustom
                 {
                     UIManager.ShowMenu = true;
                     inspector.Tab.TabText.text = "Databuilder of " + file.name;
-                    inspector.SetFilter("DatabuilderOutput.code", default);
+                    inspector.SetFilter("DatabuilderOutput.", default);
+                    //InspectorManager.Inspect(inspector);
                 }
             }
         }
@@ -261,7 +291,7 @@ public partial class ConsoleCustom
             predictedArgs = [];
             yield return GetDatafileOptions(this, currentArgs);
             predictedArgs = predictedArgs.Where(arg => baseTypes.Contains(Split(arg.Trim())[0]))
-                .Select(arg => Split(arg).Length <= 1 && supportedTypes.All(type => !type.Contains(Split(arg.Trim())[0])) ? arg + " \t// More coming soon" : arg)
+                .Select(arg => Split(arg).Length <= 1 && supportedTypes.All(type => !type.Contains(Split(arg.Trim())[0])) ? arg + " \t// Works, but not formatted yet!" : arg)
                 .ToArray();
 
             if ("this".ToLower().Contains(currentArgs.Trim().ToLower()))
@@ -332,25 +362,25 @@ public partial class ConsoleCustom
                     System.IO.Directory.GetDirectories(workshop).Update(assemblyResolver.AddSearchDirectory);
                     System.IO.Directory.GetDirectories(local).Update(assemblyResolver.AddSearchDirectory);
 
+                    var settings = new ICSharpCode.Decompiler.DecompilerSettings(ICSharpCode.Decompiler.CSharp.LanguageVersion.Latest);
                     var decompiler = new ICSharpCode.Decompiler.CSharp.CSharpDecompiler(
                         fileName: dataType.Assembly.Location,
                         assemblyResolver: assemblyResolver,
-                        settings: new ICSharpCode.Decompiler.DecompilerSettings(ICSharpCode.Decompiler.CSharp.LanguageVersion.Latest)
+                        settings: settings
                         );
-                    string decompiled = decompiler.DecompileTypeAsString(new(dataType.FullName));
+
+                    var syntaxTree = decompiler.DecompileType(new(dataType.FullName));
+                    var typeNode = syntaxTree.Descendants.FirstOrDefault(node => node is TypeDeclaration type && type.Name == dataType.Name) as TypeDeclaration;
+                    //InspectorManager.Inspect(typeNode);
+
+                    var fieldDeclarations = typeNode.Members.OfType<FieldDeclaration>();
+                    var varDeclarations = fieldDeclarations.Select(field => field.Variables.FirstOrDefault());
 
                     foreach (var field in fields)
                     {
-                        // match for parts of the string that go like
-                        // field;
-                        // field = yadayada;
-                        // field = yadayada{
-                        //  };
-                        Match match = new Regex($@"{field.Name};|{field.Name} = ([^;]*)*;").Match(decompiled);
-                        if (match.Success)
-                        {
-                            defaultValues[field] = match.Captures[0].Value.Replace(field.Name, "");
-                        }
+                        var match = varDeclarations.FirstOrDefault(var => var.Name == field.Name);
+                        if (!match.Initializer.IsNull)
+                            defaultValues[field] = match.Initializer.ToString(settings.CSharpFormattingOptions);
                     }
                 }
                 catch { }
@@ -411,7 +441,7 @@ public partial class ConsoleCustom
                 yield return new WaitWhile(() => UIManager.Initializing); 
                 yield return null;
             }
-            Debug.LogWarning("WE GOT EM BOYS");
+            Debug.LogWarning("WE GOT EM FOLKS");
             if (args.Trim() == "this")
             {
                 if (ConsoleMod.hover)

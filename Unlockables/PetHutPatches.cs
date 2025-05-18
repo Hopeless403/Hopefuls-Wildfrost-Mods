@@ -9,30 +9,45 @@ namespace Unlockables
 {
     public partial class UnlockablesMod
     {
+        [HarmonyPatch]
         public class PetHutPatches
         {
-            [HarmonyPatch(typeof(PetHutSequence), nameof(PetHutSequence.Start))]
-            static void Postfix(PetHutSequence __instance)
+            [HarmonyPostfix]
+            [HarmonyPatch(typeof(MetaprogressionSystem), nameof(MetaprogressionSystem.GetLockedItems))]
+            public static List<string> GetLockedItems(List<string> result, MetaprogressionSystem __instance, List<UnlockData> remainingUnlocks)
             {
-                List<ChallengeData> petChallenges = [];
-                foreach (var kvp in MetaprogressionSystem.GetPetDict()) // Ignore the 7 vanilla pets? Hoping that the order is retained
-                {
-                    if (AddressableLoader.Get<CardData>(nameof(CardData), kvp.Key) == null)
-                        continue;
-
-                    ChallengeData challenge = AddressableLoader.GetGroup<ChallengeData>(nameof(ChallengeData)).FirstOrDefault(c => c.reward?.name == kvp.Value);
-                    Debug.LogWarning("PETHUT: " + (kvp, challenge));
-
-                    petChallenges.Add(challenge);
-                }
-
-                // ISSUE: only the challenges for pets indexed >= __instance.challenges.Length will be shown!
-                __instance.challenges = petChallenges.ToArray();
+                //MetaprogressionSystem.GetUnlocked()
+                return result;
             }
 
 
+
+
+            /// <summary>
+            /// For PetHut, set the challenges to be exactly the ones that reward their UnlockData
+            /// </summary>
             [HarmonyPostfix]
-            [HarmonyPatch(typeof(MetaprogressionSystem), nameof(MetaprogressionSystem.GetAllPets))]
+            [HarmonyPatch(typeof(PetHutSequence), nameof(PetHutSequence.Start))]
+            public static void UpdatePetChallenges(PetHutSequence __instance)
+            {
+                List<ChallengeData> petChallenges = [];
+                foreach (var kvp in MetaprogressionSystem.GetPetDict())
+                {
+                    if (kvp.Value.IsNullOrEmpty())
+                        petChallenges.Add(null);
+                    else
+                    {
+                        ChallengeData challenge = ChallengeSystem.GetAllChallenges().FirstOrDefault(c => c.reward.name == kvp.Value);
+                        petChallenges.Add(challenge);
+                    }
+                }
+
+                __instance.challenges = petChallenges.ToArray();
+            }
+
+            /// Attempt at fixing the pet hut unlock showcase
+            //[HarmonyPostfix]
+            //[HarmonyPatch(typeof(MetaprogressionSystem), nameof(MetaprogressionSystem.GetAllPets))]
             static string[] GetAllPets(string[] original)
             {
                 var frames = new System.Diagnostics.StackTrace(fNeedFileInfo: true).GetFrames();
@@ -51,8 +66,8 @@ namespace Unlockables
             }
 
 
-            [HarmonyPostfix]
-            [HarmonyPatch(typeof(PetHutSequence), nameof(PetHutSequence.Unlock))]
+            //[HarmonyPostfix]
+            //[HarmonyPatch(typeof(PetHutSequence), nameof(PetHutSequence.Unlock))]
             static IEnumerator Unlock(IEnumerator original, PetHutSequence __instance)
             {
                 yield return original;

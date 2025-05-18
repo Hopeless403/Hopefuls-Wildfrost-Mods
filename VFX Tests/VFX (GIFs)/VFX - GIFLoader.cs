@@ -118,10 +118,66 @@ public partial class GIFLoader
 
         return result;
     }
-
-    public static bool CreateGifPrefab(string path, int loops, out GameObject prefab, string name = null, bool destroyOnEnd = true)
+    public static bool CreateGifPrefab2(string path, int loops, out GameObject prefab, string name = null, bool destroyOnEnd = true)
     {
         if (path == null || !File.Exists(path))
+            throw new FileNotFoundException($"[VFX Tools] {path} doesn't exist! Make sure to include \".gif\"");
+        name ??= Path.GetFileNameWithoutExtension(path);
+
+        Debug.LogError("Load GIF: " + Path.GetFileName(path));
+
+        byte[] data = File.ReadAllBytes(path);
+
+        prefab = new GameObject(name, typeof(SpriteRenderer));
+        if (VFXMod.parent) prefab.transform.SetParent(VFXMod.parent);
+        else GameObject.DontDestroyOnLoad(prefab);
+        prefab.SetLayerRecursively(8);
+        prefab.GetComponent<SpriteRenderer>().sortingLayerID = -2147482037;
+        var gifAnimator = prefab.AddComponent<GIFAnimator>();
+        gifAnimator.frames = new Sprite[0];
+        gifAnimator.originalID = prefab.GetInstanceID();
+        gifAnimator.loops = loops;
+        gifAnimator.destroyOnEnd = destroyOnEnd;
+
+        using (var decoder = new Utils.mgGIF.Decoder(data))
+        {
+            List<Sprite> frames = new();
+            List<float> delays = new();
+            float delay = 1 / 24;
+            var img = decoder.NextImage();
+            var allimg = new List<Utils.mgGIF.Image>();
+
+            bool framesDebugMethod = false;
+            while (img != null)
+            {
+                if (!framesDebugMethod)
+                {
+                    Texture2D texture = img.CreateTexture();
+                    frames.Add(Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100, 0, SpriteMeshType.FullRect));
+                }
+                allimg.Add(img);
+                delays.Add(delay = img.Delay / 1000f);
+                img = decoder.NextImage();
+            }
+            if (framesDebugMethod) frames = ImagesToFrames(allimg);
+            gifAnimator.frames = frames.ToArray();
+            gifAnimator.delays = delays.ToArray();
+        }
+
+
+        if (gifAnimator.frames.Length == 0)
+        {
+            Debug.LogError($"[VFX Tools] {path} cannot be read!");
+            prefab.Destroy();
+            return false;
+        }
+        gifAnimator.enabled = true;
+        Debug.LogWarning($"[VFX Tools] Created prefab: [{name}] with ID {prefab.GetInstanceID()}!");
+        return true;
+    }
+    public static bool CreateGifPrefab(string path, int loops, out GameObject prefab, string name = null, bool destroyOnEnd = true)
+    {
+        if (!File.Exists(path))
             throw new FileNotFoundException($"[VFX Tools] {path} doesn't exist! Make sure to include \".gif\"");
         name ??= Path.GetFileNameWithoutExtension(path);
 
@@ -136,12 +192,14 @@ public partial class GIFLoader
             var img = decoder.NextImage();
             while (img != null)
             {
-                frames.Add(img.CreateTexture());
+                Texture2D frame = img.CreateTexture();
+                
+                frames.Add(frame);
                 delays.Add(img.Delay / 1000f);
                 img = decoder.NextImage();
             }
         }
-
+        //Debug.LogWarning($"TEXTURE {name} HAS SIZE {frames[0].width} {frames[0].height}");
         ParticleSystem particles = HopeUtils
             .CreateParticleSystem(name, textures: frames.ToArray())
             .WithDelays(delays.ToArray());

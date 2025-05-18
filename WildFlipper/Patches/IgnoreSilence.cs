@@ -1,5 +1,6 @@
 ﻿using Deadpan.Enums.Engine.Components.Modding;
 using HarmonyLib;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -15,6 +16,15 @@ using UnityEngine;
 [HarmonyPatch]
 public static class PatchIgnoreSilence
 {
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(ValueType), nameof(ValueType.ToString))]
+    public static string StringWrapperToString(string result, ValueType __instance)
+    {
+        Debug.LogWarning(__instance is FMOD.StringWrapper);
+        if (__instance is FMOD.StringWrapper wrapper)
+            return (string)wrapper;
+        else return result;
+    }
     const string credit = "Credit to Hopeless";
     public static readonly HashSet<string> patchedEffects = new HashSet<string>();
 

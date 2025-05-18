@@ -1,13 +1,340 @@
 ﻿using Deadpan.Enums.Engine.Components.Modding;
+using HarmonyLib;
+using JetBrains.Annotations;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.Localization;
 using WildFlipper;
+using WildfrostHopeMod.Utils;
+using WildfrostHopeMod.VFX;
 using static ExtraPopups.PopGroup;
 using static WildFlipper.WildFlipperMod;
+using Extensions = Deadpan.Enums.Engine.Components.Modding.Extensions;
+
+public class StatusEffectSanity : StatusEffectData
+{
+    int maximum = 9;
+    int minimum = -9;
+    public override IEnumerator RemoveStacks(int amount, bool removeTemporary)
+    {
+        var entity = new Entity();
+
+
+
+        Events.OnEntityPing -= SfxSystem.EntityPing;
+        entity.curveAnimator.Ping();
+        Events.OnEntityPing += SfxSystem.EntityPing;
+
+
+
+        count -= amount;
+        if (removeTemporary)
+        {
+            temporary -= amount;
+        }
+
+        count = Mathf.Max(minimum, count);
+
+        target.PromptUpdate();
+        yield break;
+    }
+    public virtual void GainAttack()
+    {
+        target.damage.current += GetAmount();
+        target.PromptUpdate();
+    }
+}
+
+
+public class StatusEffectInstantReplace : StatusEffectInstant
+{
+    public string typeToReplace = "snow";
+    public StatusEffectData effectToApply;
+    public override IEnumerator Process()
+    {
+        
+        StatusEffectData statusToChange = target.FindStatus(typeToReplace);
+        if (statusToChange)
+        {
+            Debug.LogError($"Changing coutn from {count} to {statusToChange.count}");
+            count = statusToChange.count;
+            yield return StatusEffectSystem.Apply(target, applier, effectToApply, GetAmount());
+            yield return statusToChange.RemoveStacks(GetAmount(), false);
+        }
+        base.Process();
+    }
+}
+public class StatusEffectInstantShuffle : StatusEffectInstant
+{
+    public Targets.Flag targetFlags;
+
+    public float delayAfter = 0.13f;
+    public TargetConstraint[] applyConstraints = [];
+    public SelectScript<Entity> selectScript;
+
+    public override IEnumerator Process()
+    {
+        Debug.Log($"{this} Running...");
+        List<Entity> list = Targets.Get(target, targetFlags, this, applyConstraints)
+            .Where(entity => entity.actualContainers?.Any() ?? false).ToList();
+
+        Debug.LogWarning($"GOT for {targetFlags}, {Targets.Get(target, targetFlags, this, applyConstraints).Join()}");
+        if (selectScript)
+            list = selectScript.Run(list);
+        Debug.LogWarning($"GOT {list.Join()}");
+        if (list.Count <= 0)
+            yield break;
+
+        List<CardContainer> containers = list.Select(entity => entity.actualContainers.FirstOrDefault()).ToList();
+        list.Shuffle();
+        
+        foreach (CardContainer cardContainer in containers)
+        {
+            Entity entityToMove = list[0];
+            list.RemoveAt(0);
+            yield return Sequences.CardMove(entityToMove, [cardContainer]);
+        }
+        double num = target.curveAnimator.Ping();
+        yield return Sequences.Wait(delayAfter);
+        yield return Remove();
+    }
+}
+
+[HarmonyPatch]
+public class PatchUnplaceableCards
+{
+    [HarmonyPatch(typeof(UnplayableCrownCardSystem), nameof(UnplayableCrownCardSystem.CardIsBlocked))]
+    public static bool Postfix(bool wasBlocked, Entity card)
+    {
+        if (wasBlocked || card.data.playType != Card.PlayType.Place) return wasBlocked;
+
+        for (int row = 0; row < References.Battle.GetRows(card.owner).Count; row++)
+        {
+            if (References.Battle.CanDeploy(card, row, out _))
+                return false;
+        }
+        return true;
+    }
+}
+
+
+// On the board, "container" refers to a row.
+// Not that it checks the shuffle is valid (see bosses)
+public class StatusEffectInstantShuffleInContainer : StatusEffectInstant
+{
+    public override IEnumerator Process()
+    {
+        if (target.containers != null && target.containers.Any())
+        {
+            CardContainer container = target.containers.RandomItem();
+            foreach (Entity entity in container.ToArray().InRandomOrder())
+            {
+                yield return Sequences.CardMove(entity, [container], tweenAll: false);/*
+                container.Remove(entity);
+                container.Insert(0, entity);*/
+            }
+            container.TweenChildPositions();
+        }
+
+        yield return Remove();
+    }
+}
+
+
+public class StatusEffectInstantGainCrown : StatusEffectInstant
+{
+    public string customCrown;
+    public override IEnumerator Process()
+    {
+        if (!target.data.HasCrown)
+        {
+            CardUpgradeData crownData = AddressableLoader.Get<CardUpgradeData>("CardUpgradeData", customCrown.IsNullOrWhitespace() ? "Crown" : customCrown);
+            if (crownData && crownData.CanAssign(target))
+                crownData.Clone().Assign(target);
+        }
+        return base.Process();
+    }
+}
+public class StatusEffectGiveCrownIfSummoned : StatusEffectData
+{
+    public override void Init()
+    {
+        Events.OnEntitySummoned += EntitySummoned;
+    }
+    public void OnDestroy()
+    {
+        Events.OnEntitySummoned -= EntitySummoned;
+    }
+
+    public void EntitySummoned(Entity entity, Entity summonedBy)
+    {
+        if (entity != target) return;
+        ActionQueue.Stack(new ActionSequence(SummnoedRoutine()) { note = $"Give crown to {target}" });
+    }
+    
+    public IEnumerator SummnoedRoutine()
+    {
+        var crown = AddressableLoader.Get<CardUpgradeData>(nameof(CardUpgradeData), "Crown").Clone();
+        Debug.LogWarning(crown);
+        yield return crown.Assign(target);
+        yield return Remove();
+    }
+}
+
+public class StatusEffectOngoingFreeAction : StatusEffectOngoing
+{
+    public override void Init()
+    {
+        Events.OnActionPerform += FreeAction;
+    }
+    public void OnDestroy()
+    {
+        Events.OnActionPerform -= FreeAction;
+    }
+    public void FreeAction(PlayAction action) => References.Player.freeAction = true;
+}
 
 internal static class WildFlipperModHelpers
 {
     public static void InitAssets() => assets = [
         .. EmoomlinBuilders(),
+
+        new StatusEffectDataBuilder(instance)
+        .Create<StatusEffectGiveCrownIfSummoned>("Gain Crown")
+        .SubscribeToAfterAllBuildEvent<StatusEffectGiveCrownIfSummoned>(data =>{
+            }),
+
+        new StatusEffectDataBuilder(instance)
+        .Create<StatusEffectInstantShuffleInContainer>("Shuffle Current Container"),
+
+        new StatusEffectDataBuilder(instance)
+        .Create<StatusEffectInstantShuffle>("Shuffle Hand, Ally, And Self")
+        .SubscribeToAfterAllBuildEvent<StatusEffectInstantShuffle>(data => {
+            data.targetFlags = Targets.Flag.Hand | Targets.Flag.Allies | Targets.Flag.Self;
+        }),
+
+
+        new StatusEffectDataBuilder(instance)
+        .Create<StatusEffectInstantReplace>("Replace Snow With Spice")
+        .WithType("hope.replace")
+        .WithIsStatus(true)
+        .SubscribeToAfterAllBuildEvent<StatusEffectInstantReplace>(data => {
+            data.typeToReplace = "snow";
+            data.effectToApply = instance.TryGet<StatusEffectData>("Spice");
+        }),
+        new StatusEffectDataBuilder(instance)
+        .Create<StatusEffectApplyXWhenYAppliedTo>("When Snow Replaced, Trigger?")
+        .SubscribeToAfterAllBuildEvent<StatusEffectApplyXWhenYAppliedTo>(data => {
+            data.applyEqualAmount = true;
+            data.whenAppliedTypes = ["hope.replace"];
+            data.whenAppliedToFlags = ~(StatusEffectApplyX.ApplyToFlags)0;
+            data.effectToApply = instance.TryGet<StatusEffectData>("Block");
+            data.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+        }),
+
+    new StatusEffectDataBuilder(instance)
+    .Create<StatusEffectApplyXWhenXAppliedTo>("When Any Status Applied, Reapply To Allies")
+    .Patch_IgnoreSilenced()
+    .WithText("When any status is applied, apply an <equal amount> to allies", SystemLanguage.English)
+    .WithStackable(false)
+    .WithCanBeBoosted(false)
+    .SubscribeToAfterAllBuildEvent<StatusEffectApplyXWhenXAppliedTo>(data =>
+    {
+        // Temporary effectToApply is required to prevent errors
+        data.effectToApply = instance.TryGet<StatusEffectData>("Snow");
+        data.applyToFlags = StatusEffectApplyX.ApplyToFlags.Allies;
+        data.waitForAnimationEnd = true;
+        data.doPing = false; // up to you
+
+        // Avoid queueing this effect if possible...
+        data.queue = false;
+
+        data.whenAnyApplied = true;
+        data.whenAppliedToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+        data.applyEqualAmount = true;
+    }),
+
+    new StatusEffectDataBuilder(instance)
+        .Create<StatusEffectTemporaryFlipped>("Hoverable Flipped State")
+        .WithText("Flipped ya", SystemLanguage.English)
+        .WithStackable(true)
+        .WithCanBeBoosted(false),
+
+    new StatusEffectDataBuilder(instance)
+        .Create<StatusEffectWhileActiveX>("While Active Flip Cards In Hand")
+        .WithText("While active, flip cards in hand")
+        .SubscribeToAfterAllBuildEvent<StatusEffectWhileActiveX>(data =>
+        {
+            data.effectToApply = instance.TryGet<StatusEffectTemporaryFlipped>("Hoverable Flipped State");
+            data.applyToFlags = StatusEffectApplyX.ApplyToFlags.Hand;
+        }),
+
+    new StatusEffectDataBuilder(instance)
+        .Create<StatusEffectOngoingFreeAction>("Ongoing Free Action")
+        .WithText("Free actions for all", SystemLanguage.English),
+
+    new StatusEffectDataBuilder(instance)
+        .Create<StatusEffectWhileActiveX>("While Active Ongoing Free Action")
+        .WithText("While active, turns are free")
+        .SubscribeToAfterAllBuildEvent<StatusEffectWhileActiveX>(data =>
+        {
+            data.effectToApply = instance.TryGet<StatusEffectOngoingFreeAction>("Ongoing Free Action");
+            data.applyToFlags = StatusEffectApplyX.ApplyToFlags.Self;
+            //~StatusEffectApplyX.ApplyToFlags.None;
+        }),
+
+        new StatusEffectDataBuilder(instance)
+  .Create<StatusEffectInstantMultiple>("Sacrifice Ally & Summon BlackGoat")
+  .WithStackable(false)
+  .WithCanBeBoosted(false)
+  .WithOffensive(true)     // As an attack effect, this is treated as a debuff
+  .WithMakesOffensive(false)   // As a starting effect, its entity should target allies
+  .WithDoesDamage(true)     // Its entity can activate "On kill" effects with this effect, eg for Bling Charm
+  .SubscribeToAfterAllBuildEvent<StatusEffectInstantMultiple>(data =>
+  {
+    data.effects = new StatusEffectInstant[]
+    {
+      instance.TryGet<StatusEffectInstantSacrifice>("Sacrifice Ally"),
+      instance.TryGet<StatusEffectInstantSummon>("Instant Summon BlackGoat"),
+    };
+  }),
+
+
+        (
+new KeywordDataBuilder(instance)
+.Create("bleed")
+.WithTitle("Bleed")
+.WithTitleColour(new Color(0.85f, 0.44f, 0.44f))
+.WithDescription("Take damage after triggering| Dissapears when trigger")
+.WithNoteColour(new Color(0.85f, 0.44f, 0.85f))
+.WithBodyColour(new Color(0.2f, 0.5f, 0.5f))
+),
+        (
+new StatusEffectDataBuilder(instance)
+.Create<StatusEffectSnow>("Bleed Effect")
+.WithIsStatus(true)
+.WithVisible(true)
+.Subscribe_WithStatusIcon("bleed icon") // TODO: Put whatever you want to name the icon builder
+),
+        (
+new StatusIconBuilder(instance)
+.Create(name: "bleed icon",     // Used in StatusEffectDataBuilder.Subscribe_WithStatusIcon()
+    statusType: "abogadouuu.wildfrost.limbusmod.bleed",
+    instance.IconPath)
+
+.WithIconGroupName(StatusIconBuilder.IconGroups.health)
+
+// Icons without text can skip these two altogether
+.WithTextColour(new Color(0.1f, 0f, 0f))   // Reddish-black      
+.WithTextShadow(new Color(1f, 1f, 0f))     // Opaque yellow shadow
+
+.WithTextboxSprite()                                    // This version reuses the main sprite for the textbox
+
+.WithKeywords(iconKeywordOrNull: "bleed") // the "icon keyword" will be adjusted to show the icon's textbox sprite
+),
+
 
         new CardDataBuilder(instance)
         .CreateUnit(name:"IceForge", englishTitle:"Ice Forge", idleAnim:"FloatAnimationProfile")
@@ -23,7 +350,33 @@ internal static class WildFlipperModHelpers
         .WithText("전장에 있는 동안, 모든 아군의 <keyword=attack><+{s0}>, 모든 적의 <keyword=attack><-{s1}>", SystemLanguage.Korean)
         .WithText("場にある間、すべての味方に<+{s0}><keyword=attack>を、すべての敵に<-{s1}><keyword=attack>を追加する", SystemLanguage.Japanese)
         .SetStats(null, null, 0)
-        .SetSprites("IceForge_mainSprite.png", "IceForge_BG.png")
+        //.SetSprites("Love.png", "IceForge_BG.png")
+        .WithValue(190)         // Base gold as an enemy: 4-6
+        .SubscribeToAfterAllBuildEvent(data =>
+        {
+                data.startWithEffects = new CardData.StatusEffectStacks[]
+                {
+                        new CardData.StatusEffectStacks(instance.Get<StatusEffectData>("While Active Increase Attack To Allies (No Desc)"), 2),
+                        new CardData.StatusEffectStacks(instance.Get<StatusEffectData>("While Active Reduce Attack To Enemies (No Ping, No Desc)"), 2),
+                        new CardData.StatusEffectStacks(instance.Get<StatusEffectData>("Scrap"), 2),
+                };
+                data.titleFallback = "Ice Forge";
+        }),
+        new CardDataBuilder(instance)
+        .CreateUnit(name:"IceForge2", englishTitle:"Ice Forge2", idleAnim:"FloatAnimationProfile")
+        .IsPet((ChallengeData)null)
+        .WithCardType("Clunker")
+        .WithTitle("冰熔炉", SystemLanguage.ChineseSimplified)
+        .WithTitle("冰熔爐", SystemLanguage.ChineseTraditional)
+        .WithTitle("얼음 용광로", SystemLanguage.Korean)
+        .WithTitle("アイスフォージ", SystemLanguage.Japanese)
+        .WithText("While active, add <+{s0}><keyword=attack> to all allies and <-{s1}><keyword=attack> to all enemies", SystemLanguage.English)
+        .WithText("在场时，所有友军<+{s0}><keyword=attack>，所有敌人<-{s1}><keyword=attack>", SystemLanguage.ChineseSimplified)
+        .WithText("在場時，所有隊友<+{s0}><keyword=attack>，所有敵人<-{s1}><keyword=attack>", SystemLanguage.ChineseTraditional)
+        .WithText("전장에 있는 동안, 모든 아군의 <keyword=attack><+{s0}>, 모든 적의 <keyword=attack><-{s1}>", SystemLanguage.Korean)
+        .WithText("場にある間、すべての味方に<+{s0}><keyword=attack>を、すべての敵に<-{s1}><keyword=attack>を追加する", SystemLanguage.Japanese)
+        .SetStats(null, null, 0)
+        //.SetSprites("Love2.png", "IceForge_BG.png")
         .WithValue(190)         // Base gold as an enemy: 4-6
         .SubscribeToAfterAllBuildEvent(data =>
         {
@@ -59,6 +412,15 @@ internal static class WildFlipperModHelpers
                 var data = (StatusEffectApplyXWhenCardMoves)d;
                 data.effectToApply = instance.TryGet<StatusEffectData>("Spice");
                 data.applyToFlags = StatusEffectApplyX.ApplyToFlags.Target;
+            })
+            ,
+        new StatusEffectDataBuilder(instance)
+            .Create<StatusEffectSanity>("When Enemy Moves Do something???")
+            .SubscribeToAfterAllBuildEvent<StatusEffectSanity>(data =>
+            {
+                data.textKey = new LocalizedString();
+                Debug.LogWarning("IsEmpty???");
+                Debug.LogWarning(data.textKey.IsEmpty);
             })
             ,
             new StatusEffectDataBuilder(instance)

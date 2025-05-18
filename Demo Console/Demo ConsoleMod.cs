@@ -19,6 +19,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.EventSystems;
 using UnityEngine.Localization.PropertyVariants.TrackedProperties;
+using UnityEngine.Localization.Tables;
 using UnityEngine.PlayerLoop;
 using UnityEngine.UI;
 using UnityExplorer;
@@ -67,7 +68,7 @@ namespace WildfrostHopeMod.CommandsConsole
         public void OnEnable()
         {
             Debug.LogWarning("ENABLED");
-            Resources.FindObjectsOfTypeAll<Sprite>().Do(SpriteHandler.ExportSprite);
+            //Resources.FindObjectsOfTypeAll<Sprite>().Do(SpriteHandler.ExportSprite);
 
 
             //ExplorerStandalone.CreateInstance();
@@ -96,14 +97,22 @@ namespace WildfrostHopeMod.CommandsConsole
                 GetAllChildren(t).ForEach(tt => Search(tt, newPath));
                 return true;
             }
-/*
-            foreach (GameObject go in GameObject.FindObjectsOfType<GameObject>().Where(g => g.scene.name == "Intro" && g.transform.parent == null))
-                Prefix(go);*/
+            /*
+                        foreach (GameObject go in GameObject.FindObjectsOfType<GameObject>().Where(g => g.scene.name == "Intro" && g.transform.parent == null))
+                            Prefix(go);*/
+
+            var table = Addressables.LoadAssetAsync<StringTable>("Tooltips_en").WaitForCompletion();
+            foreach (var str in table.SharedData.Entries)
+            {
+                var entry = table.GetEntry(str.Id);
+                Debug.LogWarning(entry?.Value);
+            }
+
 
             new Routine(SceneManager.Load("Intro", SceneType.Active, new Action<UnityEngine.SceneManagement.Scene>(s => {
                 foreach (GameObject go in GameObject.FindObjectsOfType<GameObject>().Where(g => g.scene.name == "Intro" && g.transform.parent == null))
                     Prefix(go);
-            })));
+            })), autoStart:false);
             //new Routine(Sequences.SceneChange("Intro"));
 
             foreach (System.Type allDataType in typeof(AddressableLoader).Assembly.GetTypes()
