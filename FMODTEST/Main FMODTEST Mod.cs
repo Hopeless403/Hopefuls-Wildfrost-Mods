@@ -191,7 +191,7 @@ namespace FMODTEST
                 else
                 {
                     area.battleMusicEvent = e;
-                    area.minibossMusicEvent = default;
+                    area.minibossMusicEvent = e;
                 }
             }
 

@@ -66,7 +66,8 @@ public class BiggerBoardSystem : GameSystem
 
                 GameObject newFullRow = Transform.Instantiate(tempFullRow, tempFullRow.transform.parent);
                 newFullRow.name = $"Row {References.Battle.rowCount}";
-                newFullRow.transform.localPosition = newFullRow.transform.localPosition.WithZ(1 - 0.5f * References.Battle.rowCount);
+                //newFullRow.transform.localPosition = newFullRow.transform.localPosition.WithZ(1 - 0.5f * References.Battle.rowCount);
+                newFullRow.transform.localPosition = newFullRow.transform.localPosition.WithZ(0);
 
                 foreach (var newLane in newFullRow.GetComponentsInChildren<CardSlotLane>())
                 {
@@ -75,6 +76,12 @@ public class BiggerBoardSystem : GameSystem
                     newLane.CreateSlots(newLane.slots.Count);
                     References.Battle.rows[newLane.owner].Add(newLane);
                 }
+            }
+            
+            for (int i = 0; i < References.Battle.rowCount; i++)
+            {
+                float z = (References.Battle.rowCount-i)/(2f*References.Battle.rowCount);
+                References.Battle.rows[References.Battle.player][i].transform.parent.LeanSetLocalPosZ(z);
             }
         }
 
@@ -147,6 +154,7 @@ public class BiggerBoardSystem : GameSystem
                 var rowGroup = row.GetComponentInParent<HorizontalLayoutGroup>(); // between each side (player vs enemy)
                 if (rowGroup) rowGroup.spacing = middleSpace;
             }
+
         }
         else // Not required but this gives a nice "crowded" screenshot :3
         {
@@ -169,6 +177,10 @@ public class BiggerBoardSystem : GameSystem
             if (slotGroup != null) slotGroup.spacing = slotSpacing;
         }
 
+        if (rows is RectTransform rowsRect && boardHeight / rowsRect.sizeDelta.y / middleSpace < boardLength / rowsRect.sizeDelta.x)
+        {
+            rows.localScale = Mathf.Min(boardHeight / rowsRect.sizeDelta.y / middleSpace, boardLength / rowsRect.sizeDelta.x) * Vector3.one;
+        }
 
         // Auto-adjust row positions and board bounds
         if (rows.TryGetComponent<VerticalLayoutGroup>(out var group)) group.enabled = true;
@@ -181,7 +193,16 @@ public class BiggerBoardSystem : GameSystem
                 yield return null;
                 fitter.enabled = true;
                 if (tryResizing && rows is RectTransform rowsRect)
-                    rows.localScale = boardHeight / (rowsRect.sizeDelta.y * middleSpace) * Vector3.one;
+                {
+                    
+                    Debug.LogError($"Choices are {(boardHeight / rowsRect.sizeDelta.y / middleSpace, boardLength / rowsRect.sizeDelta.x)}");
+                    // Adjust row positions vertically
+                    if (rows.TryGetComponent<VerticalLayoutGroup>(out group))
+                    {
+                        yield return null;
+                        group.spacing += (boardHeight / rows.localScale.x - group.minHeight) / (References.Battle.rowCount - 1);
+                    }
+                }
             }
             CoroutineManager.Start(ResizeNextFrame());
         }
@@ -203,19 +224,32 @@ public class BiggerBoardSystem : GameSystem
 
     public void LateUpdate()
     {
-        if (Campaign.instance && PatchBombard.system)
+        if (Campaign.instance && tryResizing)
         {
-            foreach (var target in PatchBombard.system.currentTargets)
+            if (PatchTargets.abilityTargetSystem)
+                foreach (var target in PatchTargets.abilityTargetSystem.currentTargets)
+                {
+                    target.Value.transform.position = target.Key.transform.position;
+                    target.Value.transform.localScale = target.Key.transform.lossyScale;
+                }
+            if (PatchTargets.unitTargetSystem)
             {
-                // this works for widescreen but not narrow screens
-                float rowScale = boardHeight / (3.7f * References.Battle.rowCount - 0.7f);
-                target.Value.transform.position = target.Key.transform.position;
-                target.Value.transform.localScale = target.Key.transform.localScale * rowScale;
+                var scale = References.Battle?.allSlots.FirstOrDefault()?.transform.lossyScale ?? Vector3.one;
+                foreach (var target in PatchTargets.unitTargetSystem.targets)
+                {
+                    target.transform.localScale = scale.x * PatchTargets.unitTargetSystem.targetPrefab.transform.localScale;
+                }
+            }
+            if (PatchTargets.targetingArrowSystem)
+            {
+                var scale = References.Battle?.allSlots.FirstOrDefault()?.transform.lossyScale ?? Vector3.one;
+                var arrow = PatchTargets.targetingArrowSystem.currentArrow as TargetingArrow;
+                if (arrow) arrow.head.transform.localScale = scale;
             }
         }
     }
 
-    public void DebugColours()
+    private void DebugColours()
     {
         if (!debugColours)
             return;
@@ -234,7 +268,7 @@ public class BiggerBoardSystem : GameSystem
                     float y = 1 - Y / team.Value.Count;
 
                     var image = slot.gameObject.GetOrAdd<Image>();
-                    image.canvas.sortingLayerName = "Ground";
+                    image.gameObject.GetOrAdd<Canvas>().sortingLayerName = "Shadows";
                     image.color = new Color(1 - c, 1 - m, 1 - y)
                         //.WithAlpha(0.8f)
                         ;
@@ -317,23 +351,56 @@ public class BiggerBoardSystem : GameSystem
 
 
     [HarmonyPatch]
-    public static class PatchBombard
+    public static class PatchTargets
     {
-        public static AbilityTargetSystem system;
+        public static AbilityTargetSystem abilityTargetSystem;
+        public static UnitTargetSystem unitTargetSystem;
+        public static TargetingArrowSystem targetingArrowSystem;
 
         // Fix bombard
         [HarmonyPostfix]
         [HarmonyPatch(typeof(AbilityTargetSystem), nameof(AbilityTargetSystem.AddTarget))]
         public static void AddTarget(AbilityTargetSystem __instance)
         {
-            system = __instance;
+            abilityTargetSystem = __instance;
         }
         // Fix bombard
         [HarmonyPostfix]
         [HarmonyPatch(typeof(AbilityTargetSystem), nameof(AbilityTargetSystem.Clear))]
         public static void Clear(AbilityTargetSystem __instance)
         {
-            system = null;
+            if (__instance.currentTargets?.Count <= 0)
+                abilityTargetSystem = null;
+        }
+        // Fix units
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(UnitTargetSystem), nameof(UnitTargetSystem.ShowTargets))]
+        public static void ShowTargets(UnitTargetSystem __instance)
+        {
+            unitTargetSystem = __instance;
+        }
+        // Fix units
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(UnitTargetSystem), nameof(UnitTargetSystem.HideTargets))]
+        public static void Clear(UnitTargetSystem __instance)
+        {
+            if (__instance.targets?.Count <= 0)
+                unitTargetSystem = null;
+        }
+
+        // Fix units
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(TargetingArrowSystem), nameof(TargetingArrowSystem.Show))]
+        public static void ShowTargets(TargetingArrowSystem __instance)
+        {
+            targetingArrowSystem = __instance;
+        }
+        // Fix units
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(TargetingArrowSystem), nameof(TargetingArrowSystem.Hide))]
+        public static void Clear(TargetingArrowSystem __instance)
+        {
+            targetingArrowSystem = null;
         }
     }
 }
