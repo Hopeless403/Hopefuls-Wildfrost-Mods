@@ -145,7 +145,7 @@ namespace WildFlipper
             {
                 system.enabled = true;
                 system.targetRowCount = 3;
-                system.targetSlotCount = 8;
+                system.targetSlotCount = 4;
                 system.tryResizing = true;
                 system.debugColours = ModDirectory.Contains(Application.streamingAssetsPath);
             }

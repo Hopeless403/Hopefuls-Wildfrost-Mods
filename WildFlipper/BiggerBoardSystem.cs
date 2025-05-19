@@ -119,93 +119,51 @@ public class BiggerBoardSystem : GameSystem
         Transform rows = References.Battle.rows[References.Battle.player][0].transform.parent.parent;
         int slotCount = Battle.instance.allRows.Min(row => row.slots.Count);
 
-        // RowLength = SlotLength * SlotCount + Spacing * (SlotCount - 1);
-        // Where: 2 * RowLength + MiddleSpace = BoardLength
-        // And  : SlotLength = 2 * MiddleSpace
         float middleSpace = 1;
         float slotLength = 2;
-        float slotSpacing = 0;
-        if (slotCount > 1)
-            slotSpacing = ((boardLength - middleSpace) / 2f - slotLength * slotCount) / (slotCount - 1);
+        float slotSpacing = 0.6f;
+        float rowHeight = 3f;
+        float rowLength = 7.2f;
 
-        if (tryResizing)
-        {
-            // Ideally we want this ratio, so health/attack are visible:
-            //  Spacing : SlotLength = 0.6f : 2f;
-            // Substituting into the main identity gives these calculations
-            middleSpace = 5f * boardLength / (26 * slotCount - 1);
-            slotLength = 2 * middleSpace;
-            slotSpacing = 0.6f * middleSpace;
-            // The above calculation assumes slot sizeDeltas will be changed... below is undoing it visually
-            float s = slotSpacing;
-            float r = slotLength;
-            float R = 2;
-            float S = s - (R-r);
-            slotSpacing = S;
-
-            foreach (var slot in Battle.instance.allSlots)
-            {
-                slot.transform.localScale = slotLength / 2f * Vector3.one;
-                //slot.rectTransform.sizeDelta = slot.rectTransform.sizeDelta.WithX(middleSpace * slot.rectTransform.sizeDelta.x);
-            }
-
-            foreach (var row in References.Battle.rows[References.Battle.player])
-            {
-                var rowGroup = row.GetComponentInParent<HorizontalLayoutGroup>(); // between each side (player vs enemy)
-                if (rowGroup) rowGroup.spacing = middleSpace;
-            }
-
-        }
-        else // Not required but this gives a nice "crowded" screenshot :3
+        if (!tryResizing) // Mainly for a nice "crowded" screenshot
         {
             // BoardHeight = RowHeight * RowCount + Spacing * (RowCount - 1);
-            float rowHeight = 3f; // 3f is game's default
             float spacing = 0;
             if (References.Battle.rowCount > 1)
                 spacing = -rowHeight + (boardHeight - rowHeight) / (References.Battle.rowCount - 1);
-            // Adjust row positions vertically
-            if (rows.TryGetComponent<VerticalLayoutGroup>(out var group1)) 
+            if (rows.TryGetComponent<VerticalLayoutGroup>(out var group1))
                 group1.spacing = spacing;
+
+            spacing = 0;
+            if (targetSlotCount > 1)
+                spacing = -slotLength + (rowLength - slotLength) / (targetSlotCount - 1);
+            foreach (var row in Battle.instance.allRows) 
+                if (row.TryGetComponent<CardSlotLane>(out var lane))
+                {
+                    //lane.slots.Do(slot => slot.rectTransform.sizeDelta = slot.rectTransform.sizeDelta.WithX(slotLength+spacing));
+                    lane.layout.spacing = spacing;
+                }
         }
-
-        foreach (var row in Battle.instance.allRows)
+        else if (rows.TryGetComponent<VerticalLayoutGroup>(out var layout))
         {
-            //row.rectTransform.sizeDelta = row.rectTransform.sizeDelta.WithX((boardLength - middleSpace) / 2f);
-            row.rectTransform.sizeDelta = new Vector3((boardLength-middleSpace)/2f, middleSpace*3, 1);
+            // Assuming every row has the same slot count!
+            // If some are different, rowLength needs to be calculated separately.
+            rowLength = slotLength * targetSlotCount + slotSpacing * (targetSlotCount - 1);
+            foreach (var row in Battle.instance.allRows)
+                row.rectTransform.sizeDelta = new Vector3(rowLength, rowHeight);
 
-            var slotGroup = row.GetComponentInChildren<HorizontalLayoutGroup>(); // between each slot on one side
-            if (slotGroup != null) slotGroup.spacing = slotSpacing;
-        }
-
-        if (rows is RectTransform rowsRect && boardHeight / rowsRect.sizeDelta.y / middleSpace < boardLength / rowsRect.sizeDelta.x)
-        {
-            rows.localScale = Mathf.Min(boardHeight / rowsRect.sizeDelta.y / middleSpace, boardLength / rowsRect.sizeDelta.x) * Vector3.one;
+            float targetSpacing = 0.7f;
+            float targetScale = Mathf.Min(
+                boardHeight / (rowHeight * References.Battle.rowCount + targetSpacing * (References.Battle.rowCount - 1)),
+                boardLength / (2f * rowLength + middleSpace)
+                );
+            rows.localScale = targetScale * Vector3.one;
+            layout.spacing = targetSpacing;
         }
 
         // Auto-adjust row positions and board bounds
         if (rows.TryGetComponent<VerticalLayoutGroup>(out var group)) group.enabled = true;
         if (rows.TryGetComponent<ContentSizeFitter>(out var fitter)) fitter.enabled = true;
-        if (rows.transform.parent.TryGetComponent<ContentSizeFitter>(out fitter))
-        {
-            IEnumerator ResizeNextFrame()
-            {
-                fitter.enabled = false;
-                yield return null;
-                fitter.enabled = true;
-                if (tryResizing && rows is RectTransform rowsRect)
-                {
-                    
-                    Debug.LogError($"Choices are {(boardHeight / rowsRect.sizeDelta.y / middleSpace, boardLength / rowsRect.sizeDelta.x)}");
-                    // Adjust row positions vertically
-                    if (rows.TryGetComponent<VerticalLayoutGroup>(out group))
-                    {
-                        yield return null;
-                        group.spacing += (boardHeight / rows.localScale.x - group.minHeight) / (References.Battle.rowCount - 1);
-                    }
-                }
-            }
-            CoroutineManager.Start(ResizeNextFrame());
-        }
     }
 
     public void MinibossIntrod(Entity entity)
@@ -267,8 +225,15 @@ public class BiggerBoardSystem : GameSystem
                     float m = 1 - X / lane.slots.Count;
                     float y = 1 - Y / team.Value.Count;
 
-                    var image = slot.gameObject.GetOrAdd<Image>();
-                    image.gameObject.GetOrAdd<Canvas>().sortingLayerName = "Shadows";
+                    var colour = new GameObject(new Color(1-c,1-m,1-y).ToHexRGBA(), typeof(Image), typeof(Canvas), typeof(CopyRectTransform));
+                    colour.transform.SetParent(slot.transform);
+                    colour.transform.localScale = Vector3.one;
+                    colour.GetOrAdd<CopyRectTransform>().target = slot.rectTransform;
+                    colour.GetOrAdd<CopyRectTransform>().copySize = true;
+                    colour.GetOrAdd<CopyRectTransform>().copyScale = false;
+                    colour.GetOrAdd<Canvas>().overrideSorting = true;
+                    colour.GetOrAdd<Canvas>().sortingLayerName = "Shadows";
+                    var image = colour.GetOrAdd<Image>();
                     image.color = new Color(1 - c, 1 - m, 1 - y)
                         //.WithAlpha(0.8f)
                         ;
