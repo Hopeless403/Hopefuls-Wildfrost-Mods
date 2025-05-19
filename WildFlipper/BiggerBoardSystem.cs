@@ -1,6 +1,8 @@
 ﻿using HarmonyLib;
+using NaughtyAttributes;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
@@ -117,45 +119,58 @@ public class BiggerBoardSystem : GameSystem
     public void Resize()
     {
         Transform rows = References.Battle.rows[References.Battle.player][0].transform.parent.parent;
-        int slotCount = Battle.instance.allRows.Min(row => row.slots.Count);
+        int slotCount = Battle.instance.allRows.Max(row => row.slots.Count);
 
         float middleSpace = 1;
         float slotLength = 2;
         float slotSpacing = 0.6f;
         float rowHeight = 3f;
-        float rowLength = 7.2f;
+        float rowSpacing = 0.7f;
+        float rowLength = (boardLength - middleSpace)/2;
 
         if (!tryResizing) // Mainly for a nice "crowded" screenshot
         {
             // BoardHeight = RowHeight * RowCount + Spacing * (RowCount - 1);
             float spacing = 0;
-            if (References.Battle.rowCount > 1)
-                spacing = -rowHeight + (boardHeight - rowHeight) / (References.Battle.rowCount - 1);
-            if (rows.TryGetComponent<VerticalLayoutGroup>(out var group1))
-                group1.spacing = spacing;
-
-            spacing = 0;
-            if (targetSlotCount > 1)
-                spacing = -slotLength + (rowLength - slotLength) / (targetSlotCount - 1);
+            if (slotCount > 1)
+                spacing = -slotLength + (rowLength - slotLength) / (slotCount - 1);
             foreach (var row in Battle.instance.allRows) 
                 if (row.TryGetComponent<CardSlotLane>(out var lane))
                 {
                     //lane.slots.Do(slot => slot.rectTransform.sizeDelta = slot.rectTransform.sizeDelta.WithX(slotLength+spacing));
                     lane.layout.spacing = spacing;
+                    row.rectTransform.sizeDelta = new Vector3(rowLength, rowHeight);
+                }
+
+            rowSpacing = 0;
+            if (References.Battle.rowCount > 1)
+                rowSpacing = -rowHeight + (boardHeight - rowHeight) / (References.Battle.rowCount - 1);
+            if (rows.TryGetComponent<VerticalLayoutGroup>(out var group1))
+                group1.spacing = rowSpacing;
+
+            foreach (var slot in Battle.instance.allSlots)
+                if (slot.icon.TryGetComponent<BoxCollider>(out var collider))
+                {
+                    collider.size = collider.size.With(
+                        x: 4.25f * (slotLength+spacing)/2.6f,
+                        y: 10 * (rowHeight+rowSpacing)/3.7f
+                        );
+                    if (rowSpacing < 0)
+                        collider.center = collider.center.With(y: 0);
                 }
         }
         else if (rows.TryGetComponent<VerticalLayoutGroup>(out var layout))
         {
             // Assuming every row has the same slot count!
             // If some are different, rowLength needs to be calculated separately.
-            rowLength = slotLength * targetSlotCount + slotSpacing * (targetSlotCount - 1);
+            rowLength = slotLength * slotCount + slotSpacing * (slotCount - 1);
             foreach (var row in Battle.instance.allRows)
                 row.rectTransform.sizeDelta = new Vector3(rowLength, rowHeight);
 
             float targetSpacing = 0.7f;
             float targetScale = Mathf.Min(
                 boardHeight / (rowHeight * References.Battle.rowCount + targetSpacing * (References.Battle.rowCount - 1)),
-                boardLength / (2f * rowLength + middleSpace)
+                boardLength / (2 * rowLength + middleSpace)
                 );
             rows.localScale = targetScale * Vector3.one;
             layout.spacing = targetSpacing;
@@ -180,38 +195,15 @@ public class BiggerBoardSystem : GameSystem
         }
     }
 
-    public void LateUpdate()
-    {
-        if (Campaign.instance && tryResizing)
-        {
-            if (PatchTargets.abilityTargetSystem)
-                foreach (var target in PatchTargets.abilityTargetSystem.currentTargets)
-                {
-                    target.Value.transform.position = target.Key.transform.position;
-                    target.Value.transform.localScale = target.Key.transform.lossyScale;
-                }
-            if (PatchTargets.unitTargetSystem)
-            {
-                var scale = References.Battle?.allSlots.FirstOrDefault()?.transform.lossyScale ?? Vector3.one;
-                foreach (var target in PatchTargets.unitTargetSystem.targets)
-                {
-                    target.transform.localScale = scale.x * PatchTargets.unitTargetSystem.targetPrefab.transform.localScale;
-                }
-            }
-            if (PatchTargets.targetingArrowSystem)
-            {
-                var scale = References.Battle?.allSlots.FirstOrDefault()?.transform.lossyScale ?? Vector3.one;
-                var arrow = PatchTargets.targetingArrowSystem.currentArrow as TargetingArrow;
-                if (arrow) arrow.head.transform.localScale = scale;
-            }
-        }
-    }
+    
 
     private void DebugColours()
     {
         if (!debugColours)
             return;
 
+        References.Battle.GetComponentInChildren<WorldSpaceCanvasFitScreen>()?.onUpdate
+            .AddListener(rect => CopyColliderBounds.scale = 1f / rect.localScale.x);
         foreach (var team in References.Battle.rows)
         {
             for (float Y = 0; Y < team.Value.Count; Y++)
@@ -225,12 +217,21 @@ public class BiggerBoardSystem : GameSystem
                     float m = 1 - X / lane.slots.Count;
                     float y = 1 - Y / team.Value.Count;
 
-                    var colour = new GameObject(new Color(1-c,1-m,1-y).ToHexRGBA(), typeof(Image), typeof(Canvas), typeof(CopyRectTransform));
+                    var colour = new GameObject(new Color(1-c,1-m,1-y).ToHexRGBA(), typeof(Image), typeof(Canvas));
                     colour.transform.SetParent(slot.transform);
                     colour.transform.localScale = Vector3.one;
-                    colour.GetOrAdd<CopyRectTransform>().target = slot.rectTransform;
-                    colour.GetOrAdd<CopyRectTransform>().copySize = true;
-                    colour.GetOrAdd<CopyRectTransform>().copyScale = false;
+
+                    BoxCollider collider = slot.GetComponentInChildren<BoxCollider>();
+                    if (collider)
+                    {
+                        colour.GetOrAdd<CopyColliderBounds>().target = collider;
+                    }
+                    else
+                    {
+                        colour.GetOrAdd<CopyRectTransform>().target = collider?.transform as RectTransform ?? slot.rectTransform;
+                        colour.GetOrAdd<CopyRectTransform>().copySize = true;
+                        colour.GetOrAdd<CopyRectTransform>().copyScale = false;
+                    }
                     colour.GetOrAdd<Canvas>().overrideSorting = true;
                     colour.GetOrAdd<Canvas>().sortingLayerName = "Shadows";
                     var image = colour.GetOrAdd<Image>();
@@ -314,7 +315,36 @@ public class BiggerBoardSystem : GameSystem
         return true;
     }
 
-
+    public void LateUpdate()
+    {
+        if (Campaign.instance && tryResizing)
+        {
+            if (PatchTargets.abilityTargetSystem)
+                foreach (var target in PatchTargets.abilityTargetSystem.currentTargets)
+                {
+                    target.Value.transform.position = target.Key.transform.position;
+                    target.Value.transform.localScale = target.Key.transform.lossyScale;
+                }
+            if (PatchTargets.unitTargetSystem)
+            {
+                var scale = References.Battle?.allSlots.FirstOrDefault()?.transform.lossyScale ?? Vector3.one;
+                foreach (var target in PatchTargets.unitTargetSystem.targets)
+                {
+                    target.transform.localScale = scale.x * PatchTargets.unitTargetSystem.targetPrefab.transform.localScale;
+                }
+            }
+            if (PatchTargets.targetingArrowSystem)
+            {
+                var scale = References.Battle?.allSlots.FirstOrDefault()?.transform.lossyScale ?? Vector3.one;
+                var arrow = PatchTargets.targetingArrowSystem.currentArrow as TargetingArrow;
+                if (arrow) arrow.head.transform.localScale = scale;
+            }
+        }
+    }
+    /// <summary>
+    /// Resize the target displays for Bombard, Unit targets (when hovering attacking units), and Item targets (when dragging targeted items)
+    /// </summary>
+    [Description($"Used with {nameof(BiggerBoardSystem.LateUpdate)}")]
     [HarmonyPatch]
     public static class PatchTargets
     {
@@ -353,19 +383,59 @@ public class BiggerBoardSystem : GameSystem
                 unitTargetSystem = null;
         }
 
-        // Fix units
+        // Fix items
         [HarmonyPostfix]
         [HarmonyPatch(typeof(TargetingArrowSystem), nameof(TargetingArrowSystem.Show))]
         public static void ShowTargets(TargetingArrowSystem __instance)
         {
             targetingArrowSystem = __instance;
         }
-        // Fix units
+        // Fix items
         [HarmonyPostfix]
         [HarmonyPatch(typeof(TargetingArrowSystem), nameof(TargetingArrowSystem.Hide))]
         public static void Clear(TargetingArrowSystem __instance)
         {
             targetingArrowSystem = null;
+        }
+    }
+
+    class CopyColliderBounds : MonoBehaviourRect
+    {
+        public static float scale = 1f;
+
+        public Collider target;
+        public bool onEnable;
+        public bool onUpdate = true;
+        public bool onValidate;
+        public bool hasTarget => target != null;
+
+        public void OnEnable()
+        {
+            if (onEnable)
+            {
+                Copy();
+            }
+        }
+
+        public void LateUpdate()
+        {
+            if (onUpdate)
+            {
+                Copy();
+            }
+        }
+
+        public void Copy()
+        {
+            if (hasTarget)
+            {
+                base.rectTransform.position = target.bounds.center;
+                base.rectTransform.sizeDelta = target.bounds.size;
+                if (scale > 1)
+                {
+                    base.rectTransform.localScale = scale * Vector3.one;
+                }
+            }
         }
     }
 }

@@ -138,15 +138,15 @@ namespace WildFlipper
                     $"{c.listener}");
             }*/
             //GUIUtility.systemCopyBuffer = res.Join(delimiter: "\n");
-
+            //Cursor.SetCursor();
 
             var system = ScreenSystem.instance?.gameObject.GetOrAdd<BiggerBoardSystem>();
             if (system)
             {
                 system.enabled = true;
                 system.targetRowCount = 3;
-                system.targetSlotCount = 4;
-                system.tryResizing = true;
+                system.targetSlotCount = 5;
+                //system.tryResizing = true;
                 system.debugColours = ModDirectory.Contains(Application.streamingAssetsPath);
             }
 
